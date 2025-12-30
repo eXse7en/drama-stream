@@ -16,10 +16,9 @@
 
 <script>
 const q = new URLSearchParams(location.search);
-const bookId = q.get("id");
+const bookId = q.get("id");  // Dari index.html
 const rawTitle = q.get("title");
 
-/* Helper escape HTML */
 function escapeHTML(str = "") {
   return String(str)
     .replace(/&/g, "&amp;")
@@ -38,7 +37,6 @@ if (!bookId) {
   headerEl.innerText = title;
 }
 
-/* Hanya fetch jika bookId ada */
 if (bookId) {
   fetch(`https://restxdb.onrender.com/api/chapters/${encodeURIComponent(bookId)}?lang=in`)
     .then(res => res.json())
@@ -53,16 +51,15 @@ if (bookId) {
         return;
       }
 
+      // ✅ PERBAIKAN: pakai 'book' dan 'ep' sesuai watch.html
       list.forEach((ep, i) => {
         const epTitleRaw = ep.chapterName || ep.title || `Episode ${i + 1}`;
         const epTitleSafe = escapeHTML(epTitleRaw);
-        const bookParam = encodeURIComponent(bookId);
-        const epIndex = i;
         const epTitleParam = encodeURIComponent(epTitleRaw);
 
         eps.innerHTML += `
           <li>
-            <a href="watch.html?book=${bookParam}&ep=${epIndex}&title=${epTitleParam}">
+            <a href="watch.html?book=${encodeURIComponent(bookId)}&ep=${i}&title=${epTitleParam}">
               ${epTitleSafe}
             </a>
           </li>
@@ -70,8 +67,7 @@ if (bookId) {
       });
     })
     .catch(() => {
-      document.getElementById("eps").innerHTML =
-        "<li>Gagal memuat episode</li>";
+      document.getElementById("eps").innerHTML = "<li>Gagal memuat episode</li>";
     });
 }
 </script>
