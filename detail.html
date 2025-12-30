@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Detail Drama</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header id="title">Loading...</header>
+
+<div style="padding:16px">
+  <p id="desc"></p>
+  <h3 style="margin-top:20px">Episode</h3>
+  <ul id="eps"></ul>
+</div>
+
+<script>
+const id = new URLSearchParams(location.search).get("id");
+
+fetch(`https://restxdb.onrender.com/drama/${id}`)
+  .then(res => res.json())
+  .then(d => {
+    document.getElementById("title").innerText = d.title;
+    document.getElementById("desc").innerText = d.synopsis;
+
+    d.episodes.forEach(ep => {
+      document.getElementById("eps").innerHTML += `
+        <li>
+          <a href="watch.html?ep=${ep.id}">
+            Episode ${ep.number}
+          </a>
+        </li>`;
+    });
+  });
+</script>
+
+</body>
+</html>
