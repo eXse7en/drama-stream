@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-  <title>Drama China Streaming</title>
+  <meta charset="UTF-8">
+  <title>Drama China</title>
   <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
@@ -9,38 +10,31 @@
 <header>Drama China</header>
 
 <div id="list" class="container">
-  <div class="loading">Loading drama...</div>
+  <div class="Roring">Memuat drama...</div>
 </div>
 
 <script>
-async function loadDrama() {
-  try {
-    const res = await fetch(
-      "https://restxdb.onrender.com/drama",
-      { cache: "no-store" }
-    );
-    const data = await res.json();
-
+fetch("https://restxdb.onrender.com/api/foryou/1?lang=in")
+  .then(res => res.json())
+  .then(res => {
     const list = document.getElementById("list");
     list.innerHTML = "";
 
-    data.forEach(d => {
+    res.data.list.forEach(d => {
       list.innerHTML += `
-        <a href="detail.html?id=${d.id}">
+        <a href="detail.html?id=${d.bookId}&title=${encodeURIComponent(d.title)}">
           <div class="card">
-            <img src="${d.poster}">
+            <img src="${d.cover}" loading="lazy">
             <h3>${d.title}</h3>
           </div>
-        </a>`;
+        </a>
+      `;
     });
-
-  } catch (e) {
+  })
+  .catch(() => {
     document.getElementById("list").innerHTML =
-      "<div class='loading'>Gagal memuat data (API sleep)</div>";
-  }
-}
-
-loadDrama();
+      "<div class='Roring'>Gagal memuat data</div>";
+  });
 </script>
 
 </body>
