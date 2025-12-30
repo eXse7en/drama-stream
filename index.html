@@ -191,94 +191,109 @@
         <div class="loading">🔄 Memuat drama terbaru...</div>
     </div>
 
-    <script>
-        // API CONFIG - DramaBox RESTDB
-        const API_BASE = 'https://restxdb.onrender.com/api';
-        const API_LANG = '?lang=in';
+<script>
+    // API CONFIG - DramaBox RESTDB
+    const API_BASE = 'https://restxdb.onrender.com/api';
+    const API_LANG = '?lang=in';
 
-        // Tabs mapping ke API endpoints
-        const tabEndpoints = {
-            'ongoing': `${API_BASE}/foryou/1${API_LANG}`,
-            'new': `${API_BASE}/new/1${API_LANG}&pageSize=20`,
-            'complete': `${API_BASE}/rank/1${API_LANG}`
-        };
+    // Tabs mapping ke API endpoints
+    const tabEndpoints = {
+        'ongoing': `${API_BASE}/foryou/1${API_LANG}`,
+        'new': `${API_BASE}/new/1${API_LANG}&pageSize=20`,
+        'complete': `${API_BASE}/rank/1${API_LANG}`
+    };
 
-        // Fetch dramas dari API
-        async function fetchDramas(endpoint) {
-            try {
-                const container = document.getElementById('container');
-                container.innerHTML = '<div class="loading">🔄 Memuat drama...</div>';
-                
-                const response = await fetch(endpoint);
-                const result = await response.json();
-                
-                if (result.success && result.data?.list) {
-                    return result.data.list.map(item => ({
-                        id: item.bookId,
-                        title: item.bookName,
-                        img: item.cover,
-                        desc: item.introduction?.substring(0, 100) + '...',
-                        episodes: item.chapterCount,
-                        views: item.playCount,
-                        tags: item.tags?.slice(0, 3),
-                        rank: item.rank?.recCopy || '',
-                        corner: item.corner?.name || ''
-                    }));
-                }
-                return [];
-            } catch (error) {
-                console.error('API Error:', error);
-                document.getElementById('container').innerHTML = 
-                    '<div class="loading">❌ Gagal memuat data, cek koneksi internet</div>';
-                return [];
-            }
-        }
+    let searchTimeout;
 
-        // Render cards dari API data
-        function renderDramas(dramas, title = '') {
+    // Fetch dramas dari API
+    async function fetchDramas(endpoint) {
+        try {
             const container = document.getElementById('container');
-            container.innerHTML = title ? 
-                `<h2 style="grid-column:1/-1;text-align:center;color:#38bdf8;padding:2rem 0;">${title} (${dramas.length})</h2>` : '';
+            container.innerHTML = '<div class="loading">🔄 Memuat drama...</div>';
             
-            dramas.forEach(d => {
-                const card = document.createElement('a');
-                card.className = 'card';
-                card.href = `/detail.html?id=${d.id}`;
-                card.innerHTML = `
-                    <img src="${d.img}" alt="${d.title}" loading="lazy">
-                    <h3>${d.title}</h3>
-                    ${d.rank ? `<div class="rank-badge">${d.rank}</div>` : ''}
-                `;
-                container.appendChild(card);
-            });
+            const response = await fetch(endpoint);
+            const result = await response.json();
+            
+            if (result.success && result.data?.list) {
+                return result.data.list.map(item => ({
+                    id: item.bookId,
+                    title: item.bookName,
+                    img: item.cover,
+                    desc: item.introduction?.substring(0, 100) + '...',
+                    episodes: item.chapterCount,
+                    views: item.playCount,
+                    tags: item.tags?.slice(0, 3),
+                    rank: item.rank?.recCopy || '',
+                    corner: item.corner?.name || ''
+                }));
+            }
+            return [];
+        } catch (error) {
+            console.error('API Error:', error);
+            document.getElementById('container').innerHTML = 
+                '<div class="loading">❌ Gagal memuat data</div>';
+            return [];
         }
+    }
 
-        // Tab functionality
-        document.querySelectorAll('.tab').forEach(btn => {
-            btn.onclick = async () => {
-                document.querySelector('.tab.active')?.classList.remove('active');
-                btn.classList.add('active');
-                const dramas = await fetchDramas(tabEndpoints[btn.dataset.tab]);
-                renderDramas(dramas);
-            };
+    // Render cards
+    function renderDramas(dramas, title = '') {
+        const container = document.getElementById('container');
+        container.innerHTML = title ? 
+            `<h2 style="grid-column:1/-1;text-align:center;color:#38bdf8;padding:2rem 0;font-size:1.5rem;">${title} (${dramas.length})</h2>` : '';
+        
+        if (dramas.length === 0) {
+            container.innerHTML = '<div class="loading">Drama tidak ditemukan 😔</div>';
+            return;
+        }
+        
+        dramas.forEach(d => {
+            const card = document.createElement('a');
+            card.className = 'card';
+            card.href = `/detail.html?id=${d.id}`;
+            card.innerHTML = `
+                <img src="${d.img}" alt="${d.title}" loading="lazy">
+                <h3>${d.title}</h3>
+                ${d.rank ? `<div class="rank-badge">${d.rank}</div>` : ''}
+            `;
+            container.appendChild(card);
         });
+    }
 
-        // Search functionality
-        const searchInput = document.getElementById('search');
-        const suggest = document.getElementById('suggest');
+    // Tab functionality
+    document.querySelectorAll('.tab').forEach(btn => {
+        btn.onclick = async () => {
+            document.querySelector('.tab.active')?.classList.remove('active');
+            btn.classList.add('active');
+            const dramas = await fetchDramas(tabEndpoints[btn.dataset.tab]);
+            renderDramas(dramas);
+        };
+    });
 
-        searchInput.oninput = async (e) => {
-            const query = e.target.value.trim();
-            suggest.innerHTML = '';
-            suggest.style.display = 'none';
-            
-            if (query.length < 2) return;
+    // FIXED SEARCH + SUGGEST
+    const searchInput = document.getElementById('search');
+    const suggest = document.getElementById('suggest');
+    const searchBox = document.querySelector('.search-box');
 
+    searchInput.oninput = async () => {
+        clearTimeout(searchTimeout);
+        const query = searchInput.value.trim();
+        
+        suggest.innerHTML = '';
+        suggest.style.display = 'none';
+
+        if (query.length < 2) return;
+
+        // Debounce 300ms
+        searchTimeout = setTimeout(async () => {
             try {
-                const searchRes = await fetch(`${API_BASE}/search/${encodeURIComponent(query)}/1${API_LANG}`);
+                // Coba search API dulu
+                const searchEndpoint = `${API_BASE}/search/${encodeURIComponent(query)}/1${API_LANG}`;
+                const searchRes = await fetch(searchEndpoint);
                 const searchData = await searchRes.json();
                 
-                if (searchData.success && searchData.data?.list) {
+                if (searchData.success && searchData.data?.list?.length > 0) {
+                    // Tampilkan 6 hasil pertama
                     searchData.data.list.slice(0, 6).forEach(item => {
                         const div = document.createElement('div');
                         div.textContent = item.bookName;
@@ -291,24 +306,46 @@
                         suggest.appendChild(div);
                     });
                     suggest.style.display = 'block';
+                } else {
+                    // Fallback: tampilkan pesan
+                    const div = document.createElement('div');
+                    div.textContent = `Tidak ditemukan "${query}"`;
+                    div.style.opacity = '0.5';
+                    suggest.appendChild(div);
+                    suggest.style.display = 'block';
                 }
             } catch (error) {
                 console.error('Search error:', error);
+                suggest.innerHTML = '<div style="padding:1rem;color:#9ca3af;">Cek koneksi internet</div>';
+                suggest.style.display = 'block';
             }
-        };
+        }, 300);
+    };
 
-        // Search dramas
-        async function searchDramas(query) {
-            const endpoint = `${API_BASE}/search/${encodeURIComponent(query)}/1${API_LANG}`;
-            const dramas = await fetchDramas(endpoint);
-            renderDramas(dramas, `Hasil pencarian: ${query}`);
+    // Hide suggest on outside click
+    document.onclick = (e) => {
+        if (!searchBox.contains(e.target)) {
+            suggest.style.display = 'none';
         }
+    };
 
-        // Initial load
-        fetchDramas(tabEndpoints.ongoing).then(dramas => renderDramas(dramas));
+    // Search dramas
+    async function searchDramas(query) {
+        const endpoint = `${API_BASE}/search/${encodeURIComponent(query)}/1${API_LANG}`;
+        const dramas = await fetchDramas(endpoint);
+        renderDramas(dramas, `Hasil pencarian: ${query}`);
+    }
 
-        // Offline handling
-        window.addEventListener('online', () => location.reload());
-    </script>
+    // Enter key search
+    searchInput.onkeypress = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            searchDramas(searchInput.value);
+        }
+    };
+
+    // Initial load
+    fetchDramas(tabEndpoints.ongoing).then(dramas => renderDramas(dramas));
+</script>
 </body>
 </html>
