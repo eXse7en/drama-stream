@@ -6,7 +6,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="assets/style.css">
   <style>
-    /* Override untuk detail page */
+    /* SKELETON LOADING */
+    .skeleton {
+      background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+      background-size: 200% 100%;
+      animation: skeleton-loading 1.5s infinite;
+      border-radius: 12px;
+      height: 72px;
+      margin: 6px;
+    }
+    @keyframes skeleton-loading {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    
+    /* DETAIL PAGE STYLING */
     body { background: linear-gradient(135deg, #0b1220 0%, #1e293b 100%); }
     
     #title {
@@ -19,7 +33,6 @@
       top: 0;
       z-index: 100;
       border-bottom: 1px solid rgba(56,189,248,.3);
-      background: linear-gradient(135deg, rgba(2,6,23,.95), rgba(15,23,42,.95));
     }
     
     .stats {
@@ -68,36 +81,13 @@
     .episode-item.free { border-color: #10b981; }
     .episode-item.vip { border-color: #f59e0b; background: rgba(245,158,11,.1); }
     
-    .episode-num { 
-      font-size: 14px; 
-      margin-bottom: 4px; 
-      font-weight: 700;
-    }
-    
-    .episode-badge { 
-      font-size: 9px; 
-      padding: 2px 6px; 
-      border-radius: 6px;
-      background: rgba(0,0,0,.7);
-    }
-    
+    .episode-num { font-size: 14px; margin-bottom: 4px; font-weight: 700; }
+    .episode-badge { font-size: 9px; padding: 2px 6px; border-radius: 6px; background: rgba(0,0,0,.7); }
     .free-badge { background: rgba(16,185,129,.9); color: #fff; }
     .vip-badge { background: rgba(245,158,11,.9); color: #fff; }
     
-    .loading {
-      grid-column: 1 / -1;
-      text-align: center;
-      padding: 60px;
-      opacity: 0.6;
-      font-size: 16px;
-    }
-    
     @media (max-width: 768px) {
-      .episode-grid { 
-        grid-template-columns: repeat(5, 1fr); 
-        gap: 10px; 
-        padding: 16px; 
-      }
+      .episode-grid { grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 16px; }
     }
     @media (max-width: 480px) {
       .episode-grid { grid-template-columns: repeat(4, 1fr); }
@@ -108,10 +98,18 @@
 
 <header id="title">Detail Drama</header>
 
-<div class="stats" id="totalEps">Memuat...</div>
+<div class="stats" id="totalEps">
+  <div style="display:flex;align-items:center;justify-content:center;gap:12px;">
+    <div class="skeleton" style="width:100px;height:20px;"></div>
+    <div class="skeleton" style="width:120px;height:20px;"></div>
+  </div>
+</div>
 
 <div id="eps" class="episode-grid">
-  <div class="loading">Memuat episode...</div>
+  <!-- SKELETON GRID (15 items) -->
+  ${Array(15).fill(0).map((_, i) => `
+    <div class="skeleton" style="grid-column: span 1;"></div>
+  `).join('')}
 </div>
 
 <script>
@@ -134,52 +132,54 @@ const epsEl = document.getElementById("eps");
 
 if (!bookId) {
   headerEl.innerText = "Drama tidak ditemukan";
-  epsEl.innerHTML = "<div class='loading'>ID drama tidak valid</div>";
+  epsEl.innerHTML = "<div style='grid-column:1/-1;text-align:center;padding:60px;color:#94a3b8;'>ID drama tidak valid</div>";
 } else {
   const title = rawTitle ? decodeURIComponent(rawTitle) : "Daftar Episode";
   headerEl.innerText = title;
   
-  totalEl.innerText = "Memuat total episode...";
-  
-  fetch(`https://restxdb.onrender.com/api/chapters/${encodeURIComponent(bookId)}?lang=in`)
-    .then(res => res.json())
-    .then(res => {
-      const list = res?.data?.chapterList || [];
-      
-      // Hitung gratis vs VIP
-      const freeCount = list.filter(c => !c.isCharge).length;
-      const vipCount = list.length - freeCount;
-      
-      totalEl.innerHTML = `
-        Total: <strong>${list.length}</strong> episode 
-        (<strong>${freeCount}</strong> gratis, <strong>${vipCount}</strong> VIP)
-      `;
-
-      if (!Array.isArray(list) || list.length === 0) {
-        epsEl.innerHTML = "<div class='loading'>Episode tidak tersedia</div>";
-        return;
-      }
-
-      // ✅ GRID LAYOUT mirip dserieshub
-      epsEl.innerHTML = list.map((chapter) => {
-        const epTitle = `Episode ${chapter.chapterIndex + 1}`;
-        const epNum = chapter.chapterIndex + 1;
-        const vipBadge = chapter.isCharge ? "VIP" : "FREE";
-        const isVip = chapter.isCharge;
+  // Simulate loading time (realistic)
+  setTimeout(() => {
+    fetch(`https://restxdb.onrender.com/api/chapters/${encodeURIComponent(bookId)}?lang=in`)
+      .then(res => res.json())
+      .then(res => {
+        const list = res?.data?.chapterList || [];
         
-        return `
-          <a href="watch.html?book=${encodeURIComponent(bookId)}&ep=${chapter.chapterIndex}&title=${encodeURIComponent(epTitle)}" 
-             class="episode-item ${isVip ? 'vip' : 'free'}">
-            <div class="episode-num">${epNum}</div>
-            <div class="episode-badge ${isVip ? 'vip-badge' : 'free-badge'}">${vipBadge}</div>
-          </a>
+        // Hitung gratis vs VIP
+        const freeCount = list.filter(c => !c.isCharge).length;
+        const vipCount = list.length - freeCount;
+        
+        totalEl.innerHTML = `
+          Total: <strong>${list.length}</strong> episode 
+          (<strong style="color:#10b981;">${freeCount}</strong> gratis, 
+           <strong style="color:#f59e0b;">${vipCount}</strong> VIP)
         `;
-      }).join("");
-    })
-    .catch(() => {
-      totalEl.innerText = "Error loading";
-      epsEl.innerHTML = "<div class='loading'>Gagal memuat episode</div>";
-    });
+
+        if (!Array.isArray(list) || list.length === 0) {
+          epsEl.innerHTML = "<div style='grid-column:1/-1;text-align:center;padding:60px;color:#94a3b8;'>Episode tidak tersedia</div>";
+          return;
+        }
+
+        // Replace skeleton dengan real data
+        epsEl.innerHTML = list.map((chapter) => {
+          const epNum = chapter.chapterIndex + 1;
+          const isVip = chapter.isCharge;
+          
+          return `
+            <a href="watch.html?book=${encodeURIComponent(bookId)}&ep=${chapter.chapterIndex}&title=Episode ${epNum}" 
+               class="episode-item ${isVip ? 'vip' : 'free'}">
+              <div class="episode-num">${epNum}</div>
+              <div class="episode-badge ${isVip ? 'vip-badge' : 'free-badge'}">
+                ${isVip ? 'VIP' : 'FREE'}
+              </div>
+            </a>
+          `;
+        }).join("");
+      })
+      .catch(() => {
+        totalEl.innerHTML = "⚠️ Error loading";
+        epsEl.innerHTML = "<div style='grid-column:1/-1;text-align:center;padding:60px;color:#f87171;'>Gagal memuat episode</div>";
+      });
+  }, 800); // 800ms realistic loading
 }
 </script>
 
