@@ -9,32 +9,105 @@
 
 <header>Drama China</header>
 
+<!-- SEARCH -->
+<div class="search-box">
+  <input id="search" placeholder="Cari drama..." autocomplete="off">
+</div>
+<div id="suggest"></div>
+
+<!-- TAB -->
+<div class="tabs">
+  <button class="active" onclick="loadTab('foryou', this)">Rekomendasi</button>
+  <button onclick="loadTab('new', this)">Baru</button>
+  <button onclick="loadTab('rank', this)">Populer</button>
+</div>
+
+<!-- LIST -->
 <div id="list" class="container">
-  <div class="Roring">Memuat drama...</div>
+  <div class="loading">Memuat...</div>
 </div>
 
 <script>
-fetch("https://restxdb.onrender.com/api/foryou/1?lang=in")
-  .then(res => res.json())
-  .then(res => {
-    const list = document.getElementById("list");
-    list.innerHTML = "";
+const listEl = document.getElementById("list");
+const suggestEl = document.getElementById("suggest");
+const searchInput = document.getElementById("search");
 
-    res.data.list.forEach(d => {
-      list.innerHTML += `
-        <a href="detail.html?id=${d.bookId}&title=${encodeURIComponent(d.bookName)}">
-          <div class="card">
-            <img src="${d.cover}" loading="lazy">
-            <h3>${d.bookName}</h3>
-          </div>
-        </a>
-      `;
-    });
-  })
-  .catch(() => {
-    document.getElementById("list").innerHTML =
-      "<div class='cardoring'>Gagal memuat data</div>";
+/* =====================
+   LOAD TAB
+===================== */
+function loadTab(type, btn) {
+  document.querySelectorAll(".tabs button").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+
+  listEl.innerHTML = "<div class='loading'>Memuat...</div>";
+
+  let url = "";
+  if (type === "foryou") url = "https://restxdb.onrender.com/api/foryou/1?lang=in";
+  if (type === "new") url = "https://restxdb.onrender.com/api/new/1?lang=in&pageSize=12";
+  if (type === "rank") url = "https://restxdb.onrender.com/api/rank/1?lang=in";
+
+  fetch(url)
+    .then(res => res.json())
+    .then(res => renderList(res.data.list))
+    .catch(() => listEl.innerHTML = "<div class='loading'>Gagal memuat</div>");
+}
+
+/* =====================
+   RENDER LIST
+===================== */
+function renderList(data) {
+  listEl.innerHTML = "";
+  data.forEach(d => {
+    listEl.innerHTML += `
+      <a href="detail.html?id=${d.bookId}&title=${encodeURIComponent(d.bookName)}">
+        <div class="card">
+          <img src="${d.cover}" loading="lazy">
+          <h3>${d.bookName}</h3>
+        </div>
+      </a>
+    `;
   });
+}
+
+/* =====================
+   SEARCH + SUGGEST
+===================== */
+let timer;
+searchInput.addEventListener("input", () => {
+  clearTimeout(timer);
+  const q = searchInput.value.trim();
+  if (q.length < 2) {
+    suggestEl.innerHTML = "";
+    return;
+  }
+
+  timer = setTimeout(() => {
+    fetch(`https://restxdb.onrender.com/api/suggest/${q}?lang=in`)
+      .then(res => res.json())
+      .then(res => {
+        suggestEl.innerHTML = "";
+        res.data.list.slice(0,5).forEach(s => {
+          suggestEl.innerHTML += `
+            <div onclick="doSearch('${s}')">${s}</div>
+          `;
+        });
+      });
+  }, 400);
+});
+
+function doSearch(q) {
+  searchInput.value = q;
+  suggestEl.innerHTML = "";
+  listEl.innerHTML = "<div class='loading'>Mencari...</div>";
+
+  fetch(`https://restxdb.onrender.com/api/search/${q}/1?lang=in`)
+    .then(res => res.json())
+    .then(res => renderList(res.data.list))
+    .catch(() => listEl.innerHTML = "<div class='loading'>Gagal mencari</div>");
+}
+
+/* LOAD DEFAULT */
+loadTab("foryou", document.querySelector(".tabs button"));
 </script>
 
 </body>
