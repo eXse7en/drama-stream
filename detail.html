@@ -52,6 +52,8 @@
       color: #fff;
       font-weight: 600;
       transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
     }
     
     .episode-item:hover {
@@ -68,14 +70,6 @@
     .episode-badge { font-size: 9px; padding: 2px 6px; border-radius: 6px; background: rgba(0,0,0,.7); }
     .free-badge { background: rgba(16,185,129,.9); color: #fff; }
     .vip-badge { background: rgba(245,158,11,.9); color: #fff; }
-    
-    .loading-more {
-      grid-column: 1 / -1;
-      text-align: center;
-      padding: 40px;
-      color: #94a3b8;
-      font-size: 14px;
-    }
     
     @media (max-width: 768px) {
       .episode-grid { grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 16px 16px 40px; }
@@ -100,10 +94,6 @@ const q = new URLSearchParams(location.search);
 const bookId = q.get("id");
 const rawTitle = q.get("title");
 
-let allEpisodes = [];
-let loadedCount = 0;
-const BATCH_SIZE = 20;
-
 const headerEl = document.getElementById("title");
 const totalEl = document.getElementById("totalEps");
 const epsEl = document.getElementById("eps");
@@ -115,79 +105,43 @@ if (!bookId) {
   const title = rawTitle ? decodeURIComponent(rawTitle) : "Daftar Episode";
   headerEl.innerText = title;
   
-  // LOAD SEMUA EPISODE SEKALIGUS
   fetch(`https://restxdb.onrender.com/api/chapters/${encodeURIComponent(bookId)}?lang=in`)
     .then(res => res.json())
     .then(res => {
-      allEpisodes = res?.data?.chapterList || [];
+      const list = res?.data?.chapterList || [];
       
-      const freeCount = allEpisodes.filter(c => !c.isCharge).length;
-      const vipCount = allEpisodes.length - freeCount;
+      const freeCount = list.filter(c => !c.isCharge).length;
+      const vipCount = list.length - freeCount;
       
       totalEl.innerHTML = `
-        Total: <strong>${allEpisodes.length}</strong> episode 
+        Total: <strong>${list.length}</strong> episode 
         (<strong style="color:#10b981;">${freeCount}</strong> gratis, 
          <strong style="color:#f59e0b;">${vipCount}</strong> VIP)
       `;
-      
-      if (allEpisodes.length === 0) {
+
+      if (!Array.isArray(list) || list.length === 0) {
         epsEl.innerHTML = "<div style='grid-column:1/-1;text-align:center;padding:60px;color:#94a3b8;'>Episode tidak tersedia</div>";
         return;
       }
-      
-      // LOAD BATCH PERTAMA
-      loadEpisodeBatch();
-      
-      // INFINITE SCROLL
-      let loading = false;
-      window.addEventListener('scroll', () => {
-        if (loading || loadedCount >= allEpisodes.length) return;
-        
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        const windowHeight = window.innerHeight;
-        const docHeight = document.documentElement.scrollHeight;
-        
-        if (scrollTop + windowHeight >= docHeight - 1000) {
-          loadEpisodeBatch();
-        }
-      });
+
+      epsEl.innerHTML = list.map((chapter) => {
+        const epNum = chapter.chapterIndex + 1;
+        const isVip = chapter.isCharge;
+        return `
+          <a href="watch.html?book=${encodeURIComponent(bookId)}&ep=${chapter.chapterIndex}&title=Episode ${epNum}" 
+             class="episode-item ${isVip ? 'vip' : 'free'}">
+            <div class="episode-num">${epNum}</div>
+            <div class="episode-badge ${isVip ? 'vip-badge' : 'free-badge'}">
+              ${isVip ? 'VIP' : 'FREE'}
+            </div>
+          </a>
+        `;
+      }).join("");
     })
     .catch(() => {
       totalEl.innerHTML = "⚠️ Error loading";
       epsEl.innerHTML = "<div style='grid-column:1/-1;text-align:center;padding:60px;color:#f87171;'>Gagal memuat episode</div>";
     });
-}
-
-function loadEpisodeBatch() {
-  const loadingMoreEl = document.createElement('div');
-  loadingMoreEl.className = 'loading-more';
-  loadingMoreEl.textContent = 'Loading more episodes...';
-  epsEl.appendChild(loadingMoreEl);
-  
-  setTimeout(() => {
-    const start = loadedCount;
-    const end = Math.min(start + BATCH_SIZE, allEpisodes.length);
-    
-    for (let i = start; i < end; i++) {
-      const chapter = allEpisodes[i];
-      const epNum = chapter.chapterIndex + 1;
-      const isVip = chapter.isCharge;
-      
-      const link = document.createElement('a');
-      link.href = `watch.html?book=${encodeURIComponent(bookId)}&ep=${chapter.chapterIndex}&title=Episode ${epNum}`;
-      link.className = `episode-item ${isVip ? 'vip' : 'free'}`;
-      link.innerHTML = `
-        <div class="episode-num">${epNum}</div>
-        <div class="episode-badge ${isVip ? 'vip-badge' : 'free-badge'}">
-          ${isVip ? 'VIP' : 'FREE'}
-        </div>
-      `;
-      epsEl.insertBefore(link, loadingMoreMoreEl);
-    }
-    
-    epsEl.removeChild(loadingMoreEl);
-    loadedCount = end;
-  }, 500);
 }
 </script>
 
