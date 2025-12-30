@@ -1,31 +1,43 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
+  <meta charset="UTF-8">
   <title>Streaming</title>
   <link rel="stylesheet" href="assets/style.css">
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 </head>
 <body>
 
-<header>Streaming</header>
+<header id="title">Streaming</header>
 
-<video id="video" controls autoplay style="width:100%"></video>
+<video id="video" controls autoplay style="width:100%; background:#000"></video>
 
 <script>
-const ep = new URLSearchParams(location.search).get("ep");
+const q = new URLSearchParams(location.search);
+const bookId = q.get("book");
+const ep = q.get("ep");
+const title = q.get("title");
 
-fetch(`https://restxdb.onrender.com/episode/${ep}`)
+if (title) {
+  document.getElementById("title").innerText = decodeURIComponent(title);
+}
+
+fetch(`https://restxdb.onrender.com/api/watch/${bookId}/${ep}?lang=in`)
   .then(res => res.json())
-  .then(data => {
+  .then(res => {
     const video = document.getElementById("video");
+    const url = res.data.playUrl;
 
     if (Hls.isSupported()) {
       const hls = new Hls();
-      hls.loadSource(data.stream_url);
+      hls.loadSource(url);
       hls.attachMedia(video);
     } else {
-      video.src = data.stream_url;
+      video.src = url;
     }
+  })
+  .catch(() => {
+    alert("Gagal memuat video");
   });
 </script>
 
