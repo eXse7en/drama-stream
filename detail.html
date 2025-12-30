@@ -5,18 +5,114 @@
   <title>Detail Drama</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="assets/style.css">
+  <style>
+    /* Override untuk detail page */
+    body { background: linear-gradient(135deg, #0b1220 0%, #1e293b 100%); }
+    
+    #title {
+      background: rgba(2,6,23,.95);
+      padding: 20px;
+      font-size: clamp(20px, 5vw, 28px);
+      font-weight: 700;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid rgba(56,189,248,.3);
+      background: linear-gradient(135deg, rgba(2,6,23,.95), rgba(15,23,42,.95));
+    }
+    
+    .stats {
+      background: rgba(30,41,59,.8);
+      padding: 15px 20px;
+      margin: 15px;
+      border-radius: 12px;
+      border: 1px solid rgba(56,189,248,.2);
+      text-align: center;
+      font-weight: 500;
+    }
+    
+    .episode-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+      gap: 12px;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .episode-item {
+      aspect-ratio: 1;
+      background: rgba(30,41,59,.8);
+      border: 2px solid transparent;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      color: #fff;
+      font-weight: 600;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .episode-item:hover {
+      background: rgba(56,189,248,.2);
+      border-color: #38bdf8;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(56,189,248,.3);
+    }
+    
+    .episode-item.free { border-color: #10b981; }
+    .episode-item.vip { border-color: #f59e0b; background: rgba(245,158,11,.1); }
+    
+    .episode-num { 
+      font-size: 14px; 
+      margin-bottom: 4px; 
+      font-weight: 700;
+    }
+    
+    .episode-badge { 
+      font-size: 9px; 
+      padding: 2px 6px; 
+      border-radius: 6px;
+      background: rgba(0,0,0,.7);
+    }
+    
+    .free-badge { background: rgba(16,185,129,.9); color: #fff; }
+    .vip-badge { background: rgba(245,158,11,.9); color: #fff; }
+    
+    .loading {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px;
+      opacity: 0.6;
+      font-size: 16px;
+    }
+    
+    @media (max-width: 768px) {
+      .episode-grid { 
+        grid-template-columns: repeat(5, 1fr); 
+        gap: 10px; 
+        padding: 16px; 
+      }
+    }
+    @media (max-width: 480px) {
+      .episode-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+  </style>
 </head>
 <body>
 
 <header id="title">Detail Drama</header>
 
-<div style="padding:10px;background:#1e293b;margin:10px;border-radius:8px;">
-  <div id="totalEps">Memuat...</div>
-</div>
+<div class="stats" id="totalEps">Memuat...</div>
 
-<ul id="eps" class="list">
-  <li>Memuat episode...</li>
-</ul>
+<div id="eps" class="episode-grid">
+  <div class="loading">Memuat episode...</div>
+</div>
 
 <script>
 const q = new URLSearchParams(location.search);
@@ -38,7 +134,7 @@ const epsEl = document.getElementById("eps");
 
 if (!bookId) {
   headerEl.innerText = "Drama tidak ditemukan";
-  epsEl.innerHTML = "<li>ID drama tidak valid</li>";
+  epsEl.innerHTML = "<div class='loading'>ID drama tidak valid</div>";
 } else {
   const title = rawTitle ? decodeURIComponent(rawTitle) : "Daftar Episode";
   headerEl.innerText = title;
@@ -49,33 +145,40 @@ if (!bookId) {
     .then(res => res.json())
     .then(res => {
       const list = res?.data?.chapterList || [];
-
-      totalEl.innerText = `Total: ${list.length} episode`;
+      
+      // Hitung gratis vs VIP
+      const freeCount = list.filter(c => !c.isCharge).length;
+      const vipCount = list.length - freeCount;
+      
+      totalEl.innerHTML = `
+        Total: <strong>${list.length}</strong> episode 
+        (<strong>${freeCount}</strong> gratis, <strong>${vipCount}</strong> VIP)
+      `;
 
       if (!Array.isArray(list) || list.length === 0) {
-        epsEl.innerHTML = "<li>Episode tidak tersedia</li>";
+        epsEl.innerHTML = "<div class='loading'>Episode tidak tersedia</div>";
         return;
       }
 
-      // ✅ SEMUA EPISODE (tidak dibatasi 20)
-      epsEl.innerHTML = list.map((chapter, i) => {
+      // ✅ GRID LAYOUT mirip dserieshub
+      epsEl.innerHTML = list.map((chapter) => {
         const epTitle = `Episode ${chapter.chapterIndex + 1}`;
-        const epTitleSafe = escapeHTML(epTitle);
-        const epTitleParam = encodeURIComponent(epTitle);
-        const vipBadge = chapter.isCharge ? "🔒 VIP" : "✅ Gratis";
+        const epNum = chapter.chapterIndex + 1;
+        const vipBadge = chapter.isCharge ? "VIP" : "FREE";
+        const isVip = chapter.isCharge;
         
         return `
-          <li>
-            <a href="watch.html?book=${encodeURIComponent(bookId)}&ep=${chapter.chapterIndex}&title=${epTitleParam}">
-              ${epTitleSafe} ${vipBadge}
-            </a>
-          </li>
+          <a href="watch.html?book=${encodeURIComponent(bookId)}&ep=${chapter.chapterIndex}&title=${encodeURIComponent(epTitle)}" 
+             class="episode-item ${isVip ? 'vip' : 'free'}">
+            <div class="episode-num">${epNum}</div>
+            <div class="episode-badge ${isVip ? 'vip-badge' : 'free-badge'}">${vipBadge}</div>
+          </a>
         `;
       }).join("");
     })
     .catch(() => {
       totalEl.innerText = "Error loading";
-      epsEl.innerHTML = "<li>Gagal memuat episode</li>";
+      epsEl.innerHTML = "<div class='loading'>Gagal memuat episode</div>";
     });
 }
 </script>
