@@ -1,36 +1,46 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
+  <meta charset="UTF-8">
   <title>Detail Drama</title>
   <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 
-<header id="title">Loading...</header>
+<header id="title">Detail Drama</header>
 
-<div style="padding:16px">
-  <p id="desc"></p>
-  <h3 style="margin-top:20px">Episode</h3>
-  <ul id="eps"></ul>
-</div>
+<ul id="eps" class="list">
+  <li>Memuat episode...</li>
+</ul>
 
 <script>
-const id = new URLSearchParams(location.search).get("id");
+const q = new URLSearchParams(location.search);
+const bookId = q.get("id");
+const title = q.get("title");
 
-fetch(`https://restxdb.onrender.com/drama/${id}`)
+if (title) {
+  document.getElementById("title").innerText = decodeURIComponent(title);
+}
+
+fetch(`https://restxdb.onrender.com/api/chapters/${bookId}?lang=in`)
   .then(res => res.json())
-  .then(d => {
-    document.getElementById("title").innerText = d.title;
-    document.getElementById("desc").innerText = d.synopsis;
+  .then(res => {
+    const eps = document.getElementById("eps");
+    eps.innerHTML = "";
 
-    d.episodes.forEach(ep => {
-      document.getElementById("eps").innerHTML += `
+    res.data.list.forEach((ep, i) => {
+      eps.innerHTML += `
         <li>
-          <a href="watch.html?ep=${ep.id}">
-            Episode ${ep.number}
+          <a href="watch.html?book=${bookId}&ep=${i}&title=${encodeURIComponent(ep.chapterName)}">
+            ${ep.chapterName}
           </a>
-        </li>`;
+        </li>
+      `;
     });
+  })
+  .catch(() => {
+    document.getElementById("eps").innerHTML =
+      "<li>Gagal memuat episode</li>";
   });
 </script>
 
