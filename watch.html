@@ -1,64 +1,181 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<title>Episode</title>
-<style>
-body {
-  background:#0b1220;
-  color:#fff;
-  font-family:system-ui;
-}
-header {
-  padding:14px;
-  background:#020617;
-  text-align:center;
-  font-weight:600;
-}
-.episode {
-  padding:12px;
-  border-bottom:1px solid #1e293b;
-}
-a { color:#38bdf8; text-decoration:none; }
-</style>
+  <meta charset="UTF-8">
+  <title>Nonton Episode</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background:#0b1220;
+      color:#fff;
+      font-family:system-ui;
+      overflow:hidden;
+    }
+    header {
+      padding:14px;
+      background:#020617;
+      text-align:center;
+      font-weight:600;
+      font-size:1.1em;
+      position:sticky;
+      top:0;
+      z-index:10;
+    }
+    .player-container {
+      width:100vw;
+      height:calc(100vh - 60px);
+      position:relative;
+    }
+    .error {
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      height:calc(100vh - 60px);
+      text-align:center;
+      padding:20px;
+    }
+    .loading {
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      height:calc(100vh - 60px);
+    }
+    .spinner {
+      width:30px;
+      height:30px;
+      border:3px solid #374151;
+      border-top:3px solid #38bdf8;
+      border-radius:50%;
+      animation:spin 1s linear infinite;
+    }
+    @keyframes spin { 0% { transform:rotate(0deg); } 100% { transform:rotate(360deg); } }
+  </style>
 </head>
 <body>
 
-<header id="title">Episode</header>
-<div id="episodes">Memuat episode...</div>
+<header id="title">Nonton Episode</header>
+
+<div id="content" class="player-container">
+  <div class="loading">
+    <div class="spinner"></div>
+    <span style="margin-left:15px;">Memuat video...</span>
+  </div>
+</div>
 
 <script>
 const params = new URLSearchParams(location.search);
-const bookId = params.get("bookId");
-const dramaId = params.get("dramaId");
-const title = params.get("title");
+const bookId = params.get("book");
+const epIndex = params.get("ep");
+const rawTitle = params.get("title");
 
-document.getElementById("title").innerText = title || "Episode";
+function escapeHTML(str = "") {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 
-fetch(`https://restxdb.onrender.com/api/episode/list/${bookId}?dramaId=${dramaId}&order=asc&lang=in`)
-  .then(res => res.json())
-  .then(res => {
-    const box = document.getElementById("episodes");
-    box.innerHTML = "";
+const titleEl = document.getElementById("title");
+const contentEl = document.getElementById("content");
 
-    if (!res.data?.list?.length) {
-      box.innerHTML = "Episode tidak tersedia";
-      return;
-    }
-
-    res.data.list.forEach(ep => {
-      box.innerHTML += `
-        <div class="episode">
-          <a href="player.html?epId=${ep.id}&title=${encodeURIComponent(ep.title)}">
-            ▶ Episode ${ep.title}
-          </a>
+if (!bookId || epIndex === null) {
+  titleEl.innerText = "Error";
+  contentEl.innerHTML = `
+    <div class="error">
+      <div>Parameter episode tidak valid.<br>
+      <small>Gunakan dari halaman detail</small>
+      </div>
+    </div>
+  `;
+} else {
+  const showTitle = rawTitle ? decodeURIComponent(rawTitle) : `Episode ${Number(epIndex) + 1}`;
+  titleEl.innerText = showTitle;
+  
+  // Gunakan endpoint WATCH sesuai dokumentasi
+  const watchUrl = `https://restxdb.onrender.com/api/watch/${encodeURIComponent(bookId)}/${encodeURIComponent(epIndex)}?lang=in&source=search_result`;
+  
+  fetch(watchUrl)
+    .then(res => res.json())
+    .then(res => {
+      const data = res?.data;
+      if (!data) {
+        throw new Error("Data tidak ditemukan");
+      }
+      
+      // Coba berbagai kemungkinan field URL video
+      const videoUrl = data.playUrl || data.url || data.hls || data.m3u8 || data.embed || "";
+      
+      if (!videoUrl) {
+        throw new Error("Link video tidak ditemukan");
+      }
+      
+      // Cek apakah HLS (.m3u8) atau MP4 biasa
+      if (videoUrl.includes('.m3u8')) {
+        // HLS player sederhana dengan hls.js
+        loadHLSPlayer(videoUrl);
+      } else {
+        // Video HTML5 biasa
+        contentEl.innerHTML = `
+          <video controls autoplay playsinline style="width:100%; height:100%; object-fit:contain;">
+            <source src="${escapeHTML(videoUrl)}" type="video/mp4">
+            Browser tidak mendukung video.
+          </video>
+        `;
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      contentEl.innerHTML = `
+        <div class="error">
+          <div>
+            <strong>Gagal memuat video</strong><br><br>
+            <small>${escapeHTML(err.message)}</small><br><br>
+            <a href="javascript:history.back()" style="color:#38bdf8;">← Kembali</a>
+          </div>
         </div>
       `;
     });
-  })
-  .catch(() => {
-    document.getElementById("episodes").innerHTML = "Gagal memuat episode";
-  });
+}
+
+// HLS Player (untuk .m3u8)
+function loadHLSPlayer(hlsUrl) {
+  const script = document.createElement('script');
+  script.src = 'https://cdn.jsdelivr.net/npm/hls.js@latest';
+  script.onload = () => {
+    if (Hls.isSupported()) {
+      const video = document.createElement('video');
+      video.controls = true;
+      video.autoplay = true;
+      video.playsInline = true;
+      video.muted = true; // iOS autoplay fix
+      video.style.width = '100%';
+      video.style.height = '100%';
+      video.style.objectFit = 'contain';
+      
+      contentEl.innerHTML = '';
+      contentEl.appendChild(video);
+      
+      const hls = new Hls();
+      hls.loadSource(hlsUrl);
+      hls.attachMedia(video);
+      
+      video.addEventListener('loadedmetadata', () => {
+        video.muted = false;
+      });
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      // Native HLS support (iOS Safari)
+      contentEl.innerHTML = `
+        <video controls autoplay playsinline style="width:100%; height:100%; object-fit:contain;">
+          <source src="${escapeHTML(hlsUrl)}" type="application/vnd.apple.mpegurl">
+        </video>
+      `;
+    }
+  };
+  document.head.appendChild(script);
+}
 </script>
 
 </body>
