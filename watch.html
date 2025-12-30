@@ -1,47 +1,63 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>Streaming</title>
-  <link rel="stylesheet" href="assets/style.css">
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<meta charset="UTF-8">
+<title>Episode</title>
+<style>
+body {
+  background:#0b1220;
+  color:#fff;
+  font-family:system-ui;
+}
+header {
+  padding:14px;
+  background:#020617;
+  text-align:center;
+  font-weight:600;
+}
+.episode {
+  padding:12px;
+  border-bottom:1px solid #1e293b;
+}
+a { color:#38bdf8; text-decoration:none; }
+</style>
 </head>
 <body>
 
-<header id="title">Streaming</header>
-
-<video id="video" controls autoplay style="width:100%; background:#000"></video>
+<header id="title">Episode</header>
+<div id="episodes">Memuat episode...</div>
 
 <script>
-const q = new URLSearchParams(location.search);
-const bookId = q.get("book");
-const ep = q.get("ep");
-const title = q.get("title");
+const params = new URLSearchParams(location.search);
+const bookId = params.get("bookId");
+const dramaId = params.get("dramaId");
+const title = params.get("title");
 
-document.getElementById("title").innerText =
-  title ? decodeURIComponent(title) : "Streaming Episode";
+document.getElementById("title").innerText = title || "Episode";
 
-fetch(`https://restxdb.onrender.com/api/watch/${bookId}/${ep}?lang=in`)
+fetch(`https://restxdb.onrender.com/api/episode/list/${bookId}?dramaId=${dramaId}&order=asc&lang=in`)
   .then(res => res.json())
   .then(res => {
-    const video = document.getElementById("video");
-    const url = res.data.playUrl || res.data.url;
+    const box = document.getElementById("episodes");
+    box.innerHTML = "";
 
-    if (!url) {
-      alert("Video tidak tersedia");
+    if (!res.data?.list?.length) {
+      box.innerHTML = "Episode tidak tersedia";
       return;
     }
 
-    if (Hls.isSupported()) {
-      const hls = new Hls();
-      hls.loadSource(url);
-      hls.attachMedia(video);
-    } else {
-      video.src = url;
-    }
+    res.data.list.forEach(ep => {
+      box.innerHTML += `
+        <div class="episode">
+          <a href="player.html?epId=${ep.id}&title=${encodeURIComponent(ep.title)}">
+            ▶ Episode ${ep.title}
+          </a>
+        </div>
+      `;
+    });
   })
   .catch(() => {
-    alert("Gagal memuat video");
+    document.getElementById("episodes").innerHTML = "Gagal memuat episode";
   });
 </script>
 
