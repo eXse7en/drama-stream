@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Drama China</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
@@ -32,41 +33,68 @@ const listEl = document.getElementById("list");
 const suggestEl = document.getElementById("suggest");
 const searchInput = document.getElementById("search");
 
+/* Helper sederhana untuk escape HTML */
+function escapeHTML(str = "") {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 /* =====================
    LOAD TAB
 ===================== */
 function loadTab(type, btn) {
   document.querySelectorAll(".tabs button").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
+  if (btn) btn.classList.add("active");
 
   listEl.innerHTML = "<div class='loading'>Memuat...</div>";
 
   let url = "";
   if (type === "foryou") url = "https://restxdb.onrender.com/api/foryou/1?lang=in";
-  if (type === "new") url = "https://restxdb.onrender.com/api/new/1?lang=in&pageSize=12";
-  if (type === "rank") url = "https://restxdb.onrender.com/api/rank/1?lang=in";
+  if (type === "new")    url = "https://restxdb.onrender.com/api/new/1?lang=in&pageSize=12";
+  if (type === "rank")   url = "https://restxdb.onrender.com/api/rank/1?lang=in";
+
+  if (!url) {
+    listEl.innerHTML = "<div class='loading'>Tab tidak dikenal</div>";
+    return;
+  }
 
   fetch(url)
     .then(res => res.json())
-    .then(res => renderList(res.data.list))
-    .catch(() => listEl.innerHTML = "<div class='loading'>Gagal memuat</div>");
+    .then(res => {
+      const list = res?.data?.list || [];
+      if (!Array.isArray(list) || list.length === 0) {
+        listEl.innerHTML = "<div class='loading'>Data kosong</div>";
+        return;
+      }
+      renderList(list);
+    })
+    .catch(() => {
+      listEl.innerHTML = "<div class='loading'>Gagal memuat</div>";
+    });
 }
 
 /* =====================
    RENDER LIST
 ===================== */
 function renderList(data) {
-  listEl.innerHTML = "";
-  data.forEach(d => {
-    listEl.innerHTML += `
-      <a href="detail.html?id=${d.bookId}&title=${encodeURIComponent(d.bookName)}">
+  listEl.innerHTML = data.map(d => {
+    const id = encodeURIComponent(d.bookId);
+    const title = escapeHTML(d.bookName);
+    const cover = escapeHTML(d.cover);
+    const urlTitle = encodeURIComponent(d.bookName || "");
+    return `
+      <a href="detail.html?id=${id}&title=${urlTitle}">
         <div class="card">
-          <img src="${d.cover}" loading="lazy">
-          <h3>${d.bookName}</h3>
+          <img src="${cover}" loading="lazy" alt="${title}">
+          <h3>${title}</h3>
         </div>
       </a>
     `;
-  });
+  }).join("");
 }
 
 /* =====================
@@ -82,15 +110,23 @@ searchInput.addEventListener("input", () => {
   }
 
   timer = setTimeout(() => {
-    fetch(`https://restxdb.onrender.com/api/suggest/${q}?lang=in`)
+    fetch(`https://restxdb.onrender.com/api/suggest/${encodeURIComponent(q)}?lang=in`)
       .then(res => res.json())
       .then(res => {
+        const list = res?.data?.list || [];
+        if (!Array.isArray(list) || list.length === 0) {
+          suggestEl.innerHTML = "";
+          return;
+        }
+
+        suggestEl.innerHTML = list.slice(0, 5).map(s => {
+          const text = escapeHTML(s);
+          const onClickQ = s.replace(/'/g, "\\'");
+          return `<div onclick="doSearch('${onClickQ}')">${text}</div>`;
+        }).join("");
+      })
+      .catch(() => {
         suggestEl.innerHTML = "";
-        res.data.list.slice(0,5).forEach(s => {
-          suggestEl.innerHTML += `
-            <div onclick="doSearch('${s}')">${s}</div>
-          `;
-        });
       });
   }, 400);
 });
@@ -100,10 +136,19 @@ function doSearch(q) {
   suggestEl.innerHTML = "";
   listEl.innerHTML = "<div class='loading'>Mencari...</div>";
 
-  fetch(`https://restxdb.onrender.com/api/search/${q}/1?lang=in`)
+  fetch(`https://restxdb.onrender.com/api/search/${encodeURIComponent(q)}/1?lang=in`)
     .then(res => res.json())
-    .then(res => renderList(res.data.list))
-    .catch(() => listEl.innerHTML = "<div class='loading'>Gagal mencari</div>");
+    .then(res => {
+      const list = res?.data?.list || [];
+      if (!Array.isArray(list) || list.length === 0) {
+        listEl.innerHTML = "<div class='loading'>Tidak ditemukan</div>";
+        return;
+      }
+      renderList(list);
+    })
+    .catch(() => {
+      listEl.innerHTML = "<div class='loading'>Gagal mencari</div>";
+    });
 }
 
 /* LOAD DEFAULT */
