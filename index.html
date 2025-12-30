@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Drama China Terbaru - Streaming HD</title>
+    <title>Drama China Terbaru - Sub Indo HD</title>
+    <meta name="description" content="Nonton Drama China Subtitle Indonesia Terlengkap & Terupdate">
+    <meta name="theme-color" content="#38bdf8">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
@@ -48,6 +50,31 @@
             box-shadow: 0 0 30px rgba(56,189,248,0.4);
             transform: scale(1.02);
         }
+        #suggest { 
+            position: absolute; 
+            top: 100%; 
+            left: 0; 
+            right: 0; 
+            max-width: 600px; 
+            margin: 0 auto;
+            background: rgba(26,26,46,0.98); 
+            border-radius: 20px; 
+            max-height: 300px; 
+            overflow-y: auto; 
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            z-index: 99;
+            display: none;
+        }
+        #suggest div { 
+            padding: 1rem 1.5rem; 
+            cursor: pointer; 
+            border-bottom: 1px solid rgba(56,189,248,0.1); 
+            transition: all 0.3s;
+        }
+        #suggest div:hover { 
+            background: rgba(56,189,248,0.2); 
+            padding-left: 2rem;
+        }
         .tabs { 
             display: flex; 
             justify-content: center; 
@@ -89,6 +116,8 @@
             transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
             border: 1px solid rgba(56,189,248,0.2);
             position: relative;
+            text-decoration: none;
+            color: inherit;
         }
         .card::before {
             content: '';
@@ -117,6 +146,19 @@
             font-weight: 700; 
             position: relative;
             z-index: 2;
+            line-height: 1.3;
+        }
+        .rank-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: linear-gradient(45deg, #38bdf8, #0ea5e9);
+            color: white;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            box-shadow: 0 4px 20px rgba(56,189,248,0.4);
         }
         .loading { 
             grid-column: 1/-1; 
@@ -125,7 +167,6 @@
             font-size: 1.3rem; 
             opacity: 0.7;
         }
-        a { text-decoration: none; color: inherit; }
         @media (max-width: 768px) { 
             .container { grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap: 1rem; padding: 1rem; }
             .tabs { justify-content: space-around; }
@@ -133,53 +174,80 @@
     </style>
 </head>
 <body>
-    <header>🎭 DRAMA CHINA TERBARU</header>
+    <header>🇨🇳 DRAMA CHINA SUB INDO 2025 🎬</header>
     
-    <div class="search-box">
-        <input type="text" id="search" placeholder="Cari drama China favoritmu...">
+    <div class="search-box" style="position: relative;">
+        <input type="text" id="search" placeholder="🔍 Cari drama China favoritmu...">
         <div id="suggest"></div>
     </div>
     
     <div class="tabs">
-        <button class="tab active" data-tab="ongoing">Sedang Tayang</button>
-        <button class="tab" data-tab="complete">Complete</button>
-        <button class="tab" data-tab="new">Terbaru</button>
+        <button class="tab active" data-tab="ongoing">🔥 Rekomendasi</button>
+        <button class="tab" data-tab="new">✨ Terbaru</button>
+        <button class="tab" data-tab="complete">📈 Populer</button>
     </div>
     
     <div class="container" id="container">
-        <div class="loading">Memuat drama terbaru...</div>
+        <div class="loading">🔄 Memuat drama terbaru...</div>
     </div>
 
     <script>
-        // Demo data drama China
-        const dramas = [
-            {title: "Cinta Membahayakan Dunia Ku", img: "https://via.placeholder.com/300x400/1e3a8a/ffffff?text=Cinta+Dunia", type: "ongoing"},
-            {title: "Sang Naga Kembali", img: "https://via.placeholder.com/300x400/38bdf8/ffffff?text=Sang+Naga", type: "new"},
-            {title: "Ratu Es Abadi", img: "https://via.placeholder.com/300x400/8b5cf6/ffffff?text=Ratu+Es", type: "complete"},
-            {title: "Pangeran Surga", img: "https://via.placeholder.com/300x400/ec4899/ffffff?text=Pangeran", type: "ongoing"},
-            {title: "Kaisar Abadi", img: "https://via.placeholder.com/300x400/f59e0b/ffffff?text=Kaisar", type: "new"},
-            {title: "Putri Rubah", img: "https://via.placeholder.com/300x400/10b981/ffffff?text=Putri", type: "complete"}
-        ];
+        // API CONFIG - DramaBox RESTDB
+        const API_BASE = 'https://restxdb.onrender.com/api';
+        const API_LANG = '?lang=in';
 
-        // Render cards
-        function renderDrams(type = 'ongoing') {
-            const container = document.getElementById('container');
-            container.innerHTML = '';
-            
-            const filtered = dramas.filter(d => !type || d.type === type);
-            
-            if (filtered.length === 0) {
-                container.innerHTML = '<div class="loading">Drama tidak ditemukan</div>';
-                return;
+        // Tabs mapping ke API endpoints
+        const tabEndpoints = {
+            'ongoing': `${API_BASE}/foryou/1${API_LANG}`,
+            'new': `${API_BASE}/new/1${API_LANG}&pageSize=20`,
+            'complete': `${API_BASE}/rank/1${API_LANG}`
+        };
+
+        // Fetch dramas dari API
+        async function fetchDramas(endpoint) {
+            try {
+                const container = document.getElementById('container');
+                container.innerHTML = '<div class="loading">🔄 Memuat drama...</div>';
+                
+                const response = await fetch(endpoint);
+                const result = await response.json();
+                
+                if (result.success && result.data?.list) {
+                    return result.data.list.map(item => ({
+                        id: item.bookId,
+                        title: item.bookName,
+                        img: item.cover,
+                        desc: item.introduction?.substring(0, 100) + '...',
+                        episodes: item.chapterCount,
+                        views: item.playCount,
+                        tags: item.tags?.slice(0, 3),
+                        rank: item.rank?.recCopy || '',
+                        corner: item.corner?.name || ''
+                    }));
+                }
+                return [];
+            } catch (error) {
+                console.error('API Error:', error);
+                document.getElementById('container').innerHTML = 
+                    '<div class="loading">❌ Gagal memuat data, cek koneksi internet</div>';
+                return [];
             }
+        }
+
+        // Render cards dari API data
+        function renderDramas(dramas, title = '') {
+            const container = document.getElementById('container');
+            container.innerHTML = title ? 
+                `<h2 style="grid-column:1/-1;text-align:center;color:#38bdf8;padding:2rem 0;">${title} (${dramas.length})</h2>` : '';
             
-            filtered.forEach(d => {
+            dramas.forEach(d => {
                 const card = document.createElement('a');
                 card.className = 'card';
-                card.href = `/detail.html?id=${d.title}`;
+                card.href = `/detail.html?id=${d.id}`;
                 card.innerHTML = `
                     <img src="${d.img}" alt="${d.title}" loading="lazy">
                     <h3>${d.title}</h3>
+                    ${d.rank ? `<div class="rank-badge">${d.rank}</div>` : ''}
                 `;
                 container.appendChild(card);
             });
@@ -187,44 +255,60 @@
 
         // Tab functionality
         document.querySelectorAll('.tab').forEach(btn => {
-            btn.onclick = () => {
-                document.querySelector('.tab.active').classList.remove('active');
+            btn.onclick = async () => {
+                document.querySelector('.tab.active')?.classList.remove('active');
                 btn.classList.add('active');
-                renderDrams(btn.dataset.tab);
+                const dramas = await fetchDramas(tabEndpoints[btn.dataset.tab]);
+                renderDramas(dramas);
             };
         });
 
         // Search functionality
         const searchInput = document.getElementById('search');
         const suggest = document.getElementById('suggest');
-        
-        searchInput.oninput = (e) => {
-            const query = e.target.value.toLowerCase();
+
+        searchInput.oninput = async (e) => {
+            const query = e.target.value.trim();
             suggest.innerHTML = '';
+            suggest.style.display = 'none';
             
             if (query.length < 2) return;
-            
-            const matches = dramas.filter(d => 
-                d.title.toLowerCase().includes(query)
-            );
-            
-            if (matches.length > 0) {
-                matches.slice(0, 5).forEach(d => {
-                    const div = document.createElement('div');
-                    div.textContent = d.title;
-                    div.onclick = () => {
-                        searchInput.value = d.title;
-                        suggest.style.display = 'none';
-                        renderDrams();
-                    };
-                    suggest.appendChild(div);
-                });
-                suggest.style.display = 'block';
+
+            try {
+                const searchRes = await fetch(`${API_BASE}/search/${encodeURIComponent(query)}/1${API_LANG}`);
+                const searchData = await searchRes.json();
+                
+                if (searchData.success && searchData.data?.list) {
+                    searchData.data.list.slice(0, 6).forEach(item => {
+                        const div = document.createElement('div');
+                        div.textContent = item.bookName;
+                        div.onclick = (e) => {
+                            e.preventDefault();
+                            searchInput.value = item.bookName;
+                            suggest.style.display = 'none';
+                            searchDramas(item.bookName);
+                        };
+                        suggest.appendChild(div);
+                    });
+                    suggest.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Search error:', error);
             }
         };
 
+        // Search dramas
+        async function searchDramas(query) {
+            const endpoint = `${API_BASE}/search/${encodeURIComponent(query)}/1${API_LANG}`;
+            const dramas = await fetchDramas(endpoint);
+            renderDramas(dramas, `Hasil pencarian: ${query}`);
+        }
+
         // Initial load
-        renderDrams();
+        fetchDramas(tabEndpoints.ongoing).then(dramas => renderDramas(dramas));
+
+        // Offline handling
+        window.addEventListener('online', () => location.reload());
     </script>
 </body>
 </html>
