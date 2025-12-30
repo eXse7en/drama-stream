@@ -5,197 +5,99 @@
   <title>Detail Drama</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body {
-      background: linear-gradient(135deg, #0b1220 0%, #1e293b 100%);
-      color: #fff;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      overflow-x: hidden;
-    }
-    .header {
-      padding: 20px;
-      background: rgba(2, 6, 23, 0.95);
-      backdrop-filter: blur(20px);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      border-bottom: 1px solid rgba(59, 130, 246, 0.3);
-    }
-    .back-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      color: #38bdf8;
-      text-decoration: none;
-      font-weight: 500;
-      margin-bottom: 12px;
-      font-size: 16px;
-    }
-    .back-btn::before {
-      content: '←';
-      font-size: 20px;
-    }
-    .title { 
-      font-size: clamp(20px, 5vw, 28px); 
-      font-weight: 700; 
-      margin-bottom: 12px;
-      background: linear-gradient(135deg, #38bdf8, #60a5fa);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .info-row {
-      display: flex;
-      gap: 24px;
-      font-size: 14px;
-      opacity: 0.9;
-      flex-wrap: wrap;
-    }
-    .episode-stats {
-      background: rgba(30, 41, 59, 0.6);
-      padding: 12px 20px;
-      border-radius: 12px;
-      border: 1px solid rgba(56, 189, 248, 0.2);
-      margin-top: 16px;
-    }
-    .episode-grid {
-      padding: 24px;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
-      gap: 12px;
-      margin-top: 24px;
-    }
-    .episode-btn {
-      aspect-ratio: 1;
-      background: rgba(30, 41, 59, 0.8);
-      border: 2px solid transparent;
-      border-radius: 12px;
-      color: #fff;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-decoration: none;
-      position: relative;
-      overflow: hidden;
-    }
-    .episode-btn:hover {
-      background: rgba(56, 189, 248, 0.2);
-      border-color: #38bdf8;
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(56, 189, 248, 0.3);
-    }
-    .episode-btn.free { border-color: #10b981; }
-    .episode-btn.vip { border-color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
-    .episode-num { font-size: 14px; margin-bottom: 2px; }
-    .episode-badge { 
-      font-size: 9px; 
-      padding: 2px 5px; 
-      border-radius: 4px;
-      margin-top: 1px;
-    }
-    .free-badge { background: rgba(16, 185, 129, 0.9); color: #fff; }
-    .vip-badge { background: rgba(245, 158, 11, 0.9); color: #fff; }
-    .loading {
-      grid-column: 1 / -1;
-      text-align: center;
-      padding: 60px 20px;
-      opacity: 0.6;
-      font-size: 16px;
-    }
-    @media (max-width: 768px) {
-      .grid { grid-template-columns: repeat(5, 1fr); gap: 10px; }
-      .episode-grid { padding: 16px; }
-      .info-row { gap: 16px; font-size: 13px; }
-    }
-    @media (max-width: 480px) {
-      .grid { grid-template-columns: repeat(4, 1fr); }
-    }
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{background:#0b1220;color:#fff;font-family:system-ui;overflow-x:hidden;}
+    .header{padding:20px;background:rgba(2,6,23,.95);position:sticky;top:0;z-index:100;}
+    .back-btn{color:#38bdf8;text-decoration:none;font-weight:500;font-size:16px;margin-bottom:12px;display:inline-block;}
+    .back-btn:before{content:'← ';font-size:20px;}
+    .title{font-size:clamp(20px,5vw,28px);font-weight:700;margin-bottom:12px;background:linear-gradient(135deg,#38bdf8,#60a5fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+    .info-row{display:flex;gap:24px;font-size:14px;opacity:.9;flex-wrap:wrap;}
+    .episode-stats{background:rgba(30,41,59,.6);padding:12px 20px;border-radius:12px;border:1px solid rgba(56,189,248,.2);margin-top:16px;}
+    .episode-grid{padding:24px;max-width:1200px;margin:0 auto;}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:12px;margin-top:24px;}
+    .episode-btn{aspect-ratio:1;background:rgba(30,41,59,.8);border:2px solid transparent;border-radius:12px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;justify-content:center;text-decoration:none;overflow:hidden;}
+    .episode-btn:hover{background:rgba(56,189,248,.2);border-color:#38bdf8;transform:translateY(-2px);box-shadow:0 8px 25px rgba(56,189,248,.3);}
+    .episode-btn.free{border-color:#10b981;}
+    .episode-btn.vip{border-color:#f59e0b;background:rgba(245,158,11,.1);}
+    .episode-num{font-size:14px;margin-bottom:2px;}
+    .episode-badge{font-size:9px;padding:2px 5px;border-radius:4px;margin-top:1px;}
+    .free-badge{background:rgba(16,185,129,.9);color:#fff;}
+    .vip-badge{background:rgba(245,158,11,.9);color:#fff;}
+    .loading{grid-column:1/-1;text-align:center;padding:60px 20px;opacity:.6;font-size:16px;}
+    @media(max-width:768px){.grid{grid-template-columns:repeat(5,1fr);gap:10px;}.episode-grid{padding:16px;}}
+    @media(max-width:480px){.grid{grid-template-columns:repeat(4,1fr);}}
   </style>
 </head>
 <body>
-
 <div class="header">
   <a href="index.html" class="back-btn">Kembali</a>
   <div class="title" id="title">Loading...</div>
   <div class="info-row" id="infoRow"></div>
-  <div class="episode-stats" id="stats">
-    <span id="totalEps">Memuat...</span>
-  </div>
+  <div class="episode-stats" id="stats">Memuat...</div>
 </div>
-
 <div class="episode-grid">
-  <div class="grid" id="eps">
-    <div class="loading">Memuat episode...</div>
-  </div>
+  <div class="grid" id="eps"><div class="loading">Memuat episode...</div></div>
 </div>
 
 <script>
-const q = new URLSearchParams(location.search);
-const bookId = q.get("id");
-const rawTitle = q.get("title");
+const q=new URLSearchParams(location.search);
+const bookId=q.get("id");
+const rawTitle=q.get("title");
 
-if (!bookId) {
-  document.getElementById("title").textContent = "Drama tidak ditemukan";
+if(!bookId){
+  document.getElementById("title").textContent="Drama tidak ditemukan";
   return;
 }
 
-const titleEl = document.getElementById("title");
-const infoRowEl = document.getElementById("infoRow");
-const totalEl = document.getElementById("totalEps");
-const epsEl = document.getElementById("eps");
+const titleEl=document.getElementById("title");
+const infoRowEl=document.getElementById("infoRow");
+const totalEl=document.getElementById("totalEps");
+const epsEl=document.getElementById("eps");
 
-titleEl.textContent = rawTitle ? decodeURIComponent(rawTitle) : "Drama";
+titleEl.textContent=rawTitle?decodeURIComponent(rawTitle):"Drama";
 
-fetch(`https://restxdb.onrender.com/api/chapters/${encodeURIComponent(bookId)}?lang=in`)
-  .then(r => r.json())
-  .then(r => {
-    const chapters = r?.data?.chapterList || [];
-    const freeCount = chapters.filter(c => !c.isCharge).length;
-    const vipCount = chapters.length - freeCount;
+// ✅ PROXY API (hindari CORS)
+const PROXY_URL = '/api/proxy?path=';
+
+fetch(`${PROXY_URL}chapters/${bookId}&lang=in`)
+  .then(r=>r.json())
+  .then(r=>{
+    const chapters=r?.data?.chapterList||[];
+    const freeCount=chapters.filter(c=>!c.isCharge).length;
+    const vipCount=chapters.length-freeCount;
     
-    totalEl.innerHTML = `
+    document.getElementById("stats").innerHTML=`
       Total: <strong>${chapters.length}</strong> episode 
       (<strong>${freeCount}</strong> gratis, <strong>${vipCount}</strong> VIP)
     `;
     
-    infoRowEl.innerHTML = `
-      <span>📺 ${Math.round(Math.random()*1000)}K views</span>
-      <span>⭐ ${Math.floor(Math.random()*5 + 3)}.${Math.floor(Math.random()*10)} rating</span>
+    infoRowEl.innerHTML=`
+      <span>📺 1.2M views</span>
+      <span>⭐ 4.7 rating</span>
     `;
 
-    if (!Array.isArray(chapters) || chapters.length === 0) {
-      epsEl.innerHTML = '<div class="loading">Episode tidak tersedia</div>';
+    if(!Array.isArray(chapters)||!chapters.length){
+      epsEl.innerHTML='<div class="loading">Episode tidak tersedia</div>';
       return;
     }
 
-    epsEl.innerHTML = chapters.map(chapter => {
-      const epNum = chapter.chapterIndex + 1;
-      const isVip = chapter.isCharge;
-      
+    epsEl.innerHTML=chapters.map(chapter=>{
+      const epNum=chapter.chapterIndex+1;
+      const isVip=chapter.isCharge;
       return `
-        <a href="watch.html?book=${encodeURIComponent(bookId)}&ep=${chapter.chapterIndex}&title=Episode ${epNum}" 
-           class="episode-btn ${isVip ? 'vip' : 'free'}">
+        <a href="watch.html?book=${bookId}&ep=${chapter.chapterIndex}&title=Episode ${epNum}" 
+           class="episode-btn ${isVip?'vip':'free'}">
           <div class="episode-num">${epNum}</div>
-          <div class="episode-badge ${isVip ? 'vip-badge' : 'free-badge'}">
-            ${isVip ? 'VIP' : 'FREE'}
+          <div class="episode-badge ${isVip?'vip-badge':'free-badge'}">
+            ${isVip?'VIP':'FREE'}
           </div>
         </a>
       `;
     }).join('');
   })
-  .catch(() => {
-    epsEl.innerHTML = '<div class="loading">Gagal memuat episode</div>';
+  .catch(()=>{
+    epsEl.innerHTML='<div class="loading">Gagal memuat (Cek proxy)</div>';
   });
 </script>
-
 </body>
 </html>
