@@ -13,11 +13,17 @@
 </div>
 
 <script>
-fetch("https://restxdb.onrender.com/drama")
-  .then(res => res.json())
-  .then(data => {
+async function loadDrama() {
+  try {
+    const res = await fetch(
+      "https://restxdb.onrender.com/drama",
+      { cache: "no-store" }
+    );
+    const data = await res.json();
+
     const list = document.getElementById("list");
     list.innerHTML = "";
+
     data.forEach(d => {
       list.innerHTML += `
         <a href="detail.html?id=${d.id}">
@@ -25,14 +31,16 @@ fetch("https://restxdb.onrender.com/drama")
             <img src="${d.poster}">
             <h3>${d.title}</h3>
           </div>
-        </a>
-      `;
+        </a>`;
     });
-  })
-  .catch(() => {
+
+  } catch (e) {
     document.getElementById("list").innerHTML =
-      "<div class='loading'>Gagal memuat data</div>";
-  });
+      "<div class='loading'>Gagal memuat data (API sleep)</div>";
+  }
+}
+
+loadDrama();
 </script>
 
 </body>
