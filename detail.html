@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Detail Drama</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
@@ -16,40 +17,63 @@
 <script>
 const q = new URLSearchParams(location.search);
 const bookId = q.get("id");
-const title = q.get("title");
+const rawTitle = q.get("title");
 
-document.getElementById("title").innerText =
-  title ? decodeURIComponent(title) : "Daftar Episode";
+/* Helper escape HTML */
+function escapeHTML(str = "") {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 
-fetch(`https://restxdb.onrender.com/api/chapters/${bookId}?lang=in`)
-  .then(res => res.json())
-  .then(res => {
-    const eps = document.getElementById("eps");
-    eps.innerHTML = "";
+const headerEl = document.getElementById("title");
+if (!bookId) {
+  headerEl.innerText = "Drama tidak ditemukan";
+  document.getElementById("eps").innerHTML = "<li>ID drama tidak valid</li>";
+} else {
+  const title = rawTitle ? decodeURIComponent(rawTitle) : "Daftar Episode";
+  headerEl.innerText = title;
+}
 
-    const list = res.data.list || res.data.chapters || [];
+/* Hanya fetch jika bookId ada */
+if (bookId) {
+  fetch(`https://restxdb.onrender.com/api/chapters/${encodeURIComponent(bookId)}?lang=in`)
+    .then(res => res.json())
+    .then(res => {
+      const eps = document.getElementById("eps");
+      eps.innerHTML = "";
 
-    if (!list.length) {
-      eps.innerHTML = "<li>Episode tidak tersedia</li>";
-      return;
-    }
+      const list = res?.data?.list || res?.data?.chapters || [];
 
-    list.forEach((ep, i) => {
-      const epTitle = ep.chapterName || ep.title || `Episode ${i+1}`;
+      if (!Array.isArray(list) || list.length === 0) {
+        eps.innerHTML = "<li>Episode tidak tersedia</li>";
+        return;
+      }
 
-      eps.innerHTML += `
-        <li>
-          <a href="watch.html?book=${bookId}&ep=${i}&title=${encodeURIComponent(epTitle)}">
-            ${epTitle}
-          </a>
-        </li>
-      `;
+      list.forEach((ep, i) => {
+        const epTitleRaw = ep.chapterName || ep.title || `Episode ${i + 1}`;
+        const epTitleSafe = escapeHTML(epTitleRaw);
+        const bookParam = encodeURIComponent(bookId);
+        const epIndex = i;
+        const epTitleParam = encodeURIComponent(epTitleRaw);
+
+        eps.innerHTML += `
+          <li>
+            <a href="watch.html?book=${bookParam}&ep=${epIndex}&title=${epTitleParam}">
+              ${epTitleSafe}
+            </a>
+          </li>
+        `;
+      });
+    })
+    .catch(() => {
+      document.getElementById("eps").innerHTML =
+        "<li>Gagal memuat episode</li>";
     });
-  })
-  .catch(() => {
-    document.getElementById("eps").innerHTML =
-      "<li>Gagal memuat episode</li>";
-  });
+}
 </script>
 
 </body>
