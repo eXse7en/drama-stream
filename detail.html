@@ -16,7 +16,7 @@
 
 <script>
 const q = new URLSearchParams(location.search);
-const bookId = q.get("id");  // Dari index.html
+const bookId = q.get("id");
 const rawTitle = q.get("title");
 
 function escapeHTML(str = "") {
@@ -44,23 +44,27 @@ if (bookId) {
       const eps = document.getElementById("eps");
       eps.innerHTML = "";
 
-      const list = res?.data?.list || res?.data?.chapters || [];
+      // ✅ FIX: pakai data.chapterList
+      const list = res?.data?.chapterList || [];
 
       if (!Array.isArray(list) || list.length === 0) {
-        eps.innerHTML = "<li>Episode tidak tersedia bro</li>";
+        eps.innerHTML = "<li>Episode tidak tersedia</li>";
         return;
       }
 
-      // ✅ PERBAIKAN: pakai 'book' dan 'ep' sesuai watch.html
-      list.forEach((ep, i) => {
-        const epTitleRaw = ep.chapterName || ep.title || `Episode ${i + 1}`;
-        const epTitleSafe = escapeHTML(epTitleRaw);
-        const epTitleParam = encodeURIComponent(epTitleRaw);
+      // ✅ Tampilkan 20 episode pertama (gratis + berbayar)
+      list.slice(0, 20).forEach((chapter, i) => {
+        const epTitle = `Episode ${chapter.chapterIndex + 1}`;
+        const epTitleSafe = escapeHTML(epTitle);
+        const epTitleParam = encodeURIComponent(epTitle);
+        
+        // Badge VIP kalau berbayar
+        const vipBadge = chapter.isCharge ? "🔒 VIP" : "✅ Gratis";
 
         eps.innerHTML += `
           <li>
-            <a href="watch.html?book=${encodeURIComponent(bookId)}&ep=${i}&title=${epTitleParam}">
-              ${epTitleSafe}
+            <a href="watch.html?book=${encodeURIComponent(bookId)}&ep=${chapter.chapterIndex}&title=${epTitleParam}">
+              ${epTitleSafe} ${vipBadge}
             </a>
           </li>
         `;
