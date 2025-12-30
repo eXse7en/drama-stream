@@ -18,15 +18,19 @@ const bookId = q.get("book");
 const ep = q.get("ep");
 const title = q.get("title");
 
-if (title) {
-  document.getElementById("title").innerText = decodeURIComponent(title);
-}
+document.getElementById("title").innerText =
+  title ? decodeURIComponent(title) : "Streaming Episode";
 
 fetch(`https://restxdb.onrender.com/api/watch/${bookId}/${ep}?lang=in`)
   .then(res => res.json())
   .then(res => {
     const video = document.getElementById("video");
-    const url = res.data.playUrl;
+    const url = res.data.playUrl || res.data.url;
+
+    if (!url) {
+      alert("Video tidak tersedia");
+      return;
+    }
 
     if (Hls.isSupported()) {
       const hls = new Hls();
