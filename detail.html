@@ -18,9 +18,8 @@ const q = new URLSearchParams(location.search);
 const bookId = q.get("id");
 const title = q.get("title");
 
-if (title) {
-  document.getElementById("title").innerText = decodeURIComponent(title);
-}
+document.getElementById("title").innerText =
+  title ? decodeURIComponent(title) : "Daftar Episode";
 
 fetch(`https://restxdb.onrender.com/api/chapters/${bookId}?lang=in`)
   .then(res => res.json())
@@ -28,11 +27,20 @@ fetch(`https://restxdb.onrender.com/api/chapters/${bookId}?lang=in`)
     const eps = document.getElementById("eps");
     eps.innerHTML = "";
 
-    res.data.list.forEach((ep, i) => {
+    const list = res.data.list || res.data.chapters || [];
+
+    if (!list.length) {
+      eps.innerHTML = "<li>Episode tidak tersedia</li>";
+      return;
+    }
+
+    list.forEach((ep, i) => {
+      const epTitle = ep.chapterName || ep.title || `Episode ${i+1}`;
+
       eps.innerHTML += `
         <li>
-          <a href="watch.html?book=${bookId}&ep=${i}&title=${encodeURIComponent(ep.chapterName)}">
-            ${ep.chapterName}
+          <a href="watch.html?book=${bookId}&ep=${i}&title=${encodeURIComponent(epTitle)}">
+            ${epTitle}
           </a>
         </li>
       `;
