@@ -3,160 +3,228 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Drama China Terbaru - Streaming HD Gratis</title>
-    <meta name="description" content="Nonton Drama China Subtitle Indonesia Terlengkap & Terupdate">
-    <meta name="theme-color" content="#38bdf8">
-    <link rel="manifest" href="/manifest.json">
-    <link rel="stylesheet" href="style.css">
+    <title>Drama China Terbaru - Streaming HD</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            color: #e5e7eb; 
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6; 
+        }
+        header { 
+            background: rgba(15,15,35,0.98); 
+            backdrop-filter: blur(20px); 
+            padding: 1.5rem; 
+            text-align: center; 
+            font-size: clamp(1.4rem, 5vw, 2rem); 
+            font-weight: 800; 
+            position: sticky; 
+            top: 0; 
+            z-index: 100; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            border-bottom: 1px solid rgba(56,189,248,0.3);
+        }
+        .search-box { 
+            padding: 1.5rem; 
+            background: rgba(26,26,46,0.95); 
+            backdrop-filter: blur(20px);
+        }
+        .search-box input { 
+            width: 100%; 
+            max-width: 600px; 
+            margin: 0 auto; 
+            display: block;
+            padding: 1rem 1.5rem; 
+            border-radius: 50px; 
+            border: 2px solid rgba(56,189,248,0.3); 
+            background: rgba(22,33,62,0.8); 
+            color: #fff; 
+            font-size: 1.1rem; 
+            transition: all 0.4s ease;
+        }
+        .search-box input:focus { 
+            border-color: #38bdf8; 
+            box-shadow: 0 0 30px rgba(56,189,248,0.4);
+            transform: scale(1.02);
+        }
+        .tabs { 
+            display: flex; 
+            justify-content: center; 
+            gap: 1rem;
+            background: rgba(15,15,35,0.9); 
+            backdrop-filter: blur(20px); 
+            padding: 1rem;
+            flex-wrap: wrap;
+        }
+        .tabs button { 
+            padding: 0.8rem 1.5rem; 
+            background: rgba(56,189,248,0.1); 
+            border: 2px solid rgba(56,189,248,0.3); 
+            color: #9ca3af; 
+            font-weight: 700; 
+            border-radius: 25px; 
+            cursor: pointer; 
+            transition: all 0.3s;
+            font-size: 0.95rem;
+        }
+        .tabs button.active, .tabs button:hover { 
+            background: #38bdf8; 
+            color: #fff; 
+            border-color: #38bdf8;
+            transform: translateY(-2px);
+        }
+        .container { 
+            padding: 2rem 1rem; 
+            max-width: 1400px; 
+            margin: 0 auto;
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); 
+            gap: 1.5rem; 
+        }
+        .card { 
+            background: rgba(26,26,46,0.9); 
+            border-radius: 24px; 
+            overflow: hidden; 
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(56,189,248,0.2);
+            position: relative;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(45deg, transparent, rgba(56,189,248,0.1));
+            opacity: 0;
+            transition: opacity 0.5s;
+            z-index: 1;
+        }
+        .card:hover { 
+            transform: translateY(-15px) rotateX(5deg); 
+            box-shadow: 0 30px 80px rgba(56,189,248,0.3);
+        }
+        .card:hover::before { opacity: 1; }
+        .card img { 
+            width: 100%; 
+            height: 240px; 
+            object-fit: cover; 
+            transition: transform 0.5s;
+        }
+        .card:hover img { transform: scale(1.1); }
+        .card h3 { 
+            padding: 1.2rem; 
+            font-size: 0.95rem; 
+            font-weight: 700; 
+            position: relative;
+            z-index: 2;
+        }
+        .loading { 
+            grid-column: 1/-1; 
+            padding: 4rem; 
+            text-align: center; 
+            font-size: 1.3rem; 
+            opacity: 0.7;
+        }
+        a { text-decoration: none; color: inherit; }
+        @media (max-width: 768px) { 
+            .container { grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap: 1rem; padding: 1rem; }
+            .tabs { justify-content: space-around; }
+        }
+    </style>
 </head>
 <body>
+    <header>🎭 DRAMA CHINA TERBARU</header>
+    
+    <div class="search-box">
+        <input type="text" id="search" placeholder="Cari drama China favoritmu...">
+        <div id="suggest"></div>
+    </div>
+    
+    <div class="tabs">
+        <button class="tab active" data-tab="ongoing">Sedang Tayang</button>
+        <button class="tab" data-tab="complete">Complete</button>
+        <button class="tab" data-tab="new">Terbaru</button>
+    </div>
+    
+    <div class="container" id="container">
+        <div class="loading">Memuat drama terbaru...</div>
+    </div>
 
-<header>Drama China</header>
+    <script>
+        // Demo data drama China
+        const dramas = [
+            {title: "Cinta Membahayakan Dunia Ku", img: "https://via.placeholder.com/300x400/1e3a8a/ffffff?text=Cinta+Dunia", type: "ongoing"},
+            {title: "Sang Naga Kembali", img: "https://via.placeholder.com/300x400/38bdf8/ffffff?text=Sang+Naga", type: "new"},
+            {title: "Ratu Es Abadi", img: "https://via.placeholder.com/300x400/8b5cf6/ffffff?text=Ratu+Es", type: "complete"},
+            {title: "Pangeran Surga", img: "https://via.placeholder.com/300x400/ec4899/ffffff?text=Pangeran", type: "ongoing"},
+            {title: "Kaisar Abadi", img: "https://via.placeholder.com/300x400/f59e0b/ffffff?text=Kaisar", type: "new"},
+            {title: "Putri Rubah", img: "https://via.placeholder.com/300x400/10b981/ffffff?text=Putri", type: "complete"}
+        ];
 
-<!-- SEARCH -->
-<div class="search-box">
-  <input id="search" placeholder="Cari drama..." autocomplete="off">
-</div>
-<div id="suggest"></div>
-
-<!-- TAB -->
-<div class="tabs">
-  <button class="active" onclick="loadTab('foryou', this)">Rekomendasi</button>
-  <button onclick="loadTab('new', this)">Baru</button>
-  <button onclick="loadTab('rank', this)">Populer</button>
-</div>
-
-<!-- LIST -->
-<div id="list" class="container">
-  <div class="loading">Memuat...</div>
-</div>
-
-<script>
-const listEl = document.getElementById("list");
-const suggestEl = document.getElementById("suggest");
-const searchInput = document.getElementById("search");
-
-/* Helper sederhana untuk escape HTML */
-function escapeHTML(str = "") {
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-/* =====================
-   LOAD TAB
-===================== */
-function loadTab(type, btn) {
-  document.querySelectorAll(".tabs button").forEach(b => b.classList.remove("active"));
-  if (btn) btn.classList.add("active");
-
-  listEl.innerHTML = "<div class='loading'>Memuat...</div>";
-
-  let url = "";
-  if (type === "foryou") url = "https://restxdb.onrender.com/api/foryou/1?lang=in";
-  if (type === "new")    url = "https://restxdb.onrender.com/api/new/1?lang=in&pageSize=12";
-  if (type === "rank")   url = "https://restxdb.onrender.com/api/rank/1?lang=in";
-
-  if (!url) {
-    listEl.innerHTML = "<div class='loading'>Tab tidak dikenal</div>";
-    return;
-  }
-
-  fetch(url)
-    .then(res => res.json())
-    .then(res => {
-      const list = res?.data?.list || [];
-      if (!Array.isArray(list) || list.length === 0) {
-        listEl.innerHTML = "<div class='loading'>Data kosong</div>";
-        return;
-      }
-      renderList(list);
-    })
-    .catch(() => {
-      listEl.innerHTML = "<div class='loading'>Gagal memuat</div>";
-    });
-}
-
-/* =====================
-   RENDER LIST
-===================== */
-function renderList(data) {
-  listEl.innerHTML = data.map(d => {
-    const id = encodeURIComponent(d.bookId);
-    const title = escapeHTML(d.bookName);
-    const cover = escapeHTML(d.cover);
-    const urlTitle = encodeURIComponent(d.bookName || "");
-    return `
-      <a href="detail.html?id=${id}&title=${urlTitle}">
-        <div class="card">
-          <img src="${cover}" loading="lazy" alt="${title}">
-          <h3>${title}</h3>
-        </div>
-      </a>
-    `;
-  }).join("");
-}
-
-/* =====================
-   SEARCH + SUGGEST
-===================== */
-let timer;
-searchInput.addEventListener("input", () => {
-  clearTimeout(timer);
-  const q = searchInput.value.trim();
-  if (q.length < 2) {
-    suggestEl.innerHTML = "";
-    return;
-  }
-
-  timer = setTimeout(() => {
-    fetch(`https://restxdb.onrender.com/api/suggest/${encodeURIComponent(q)}?lang=in`)
-      .then(res => res.json())
-      .then(res => {
-        const list = res?.data?.list || [];
-        if (!Array.isArray(list) || list.length === 0) {
-          suggestEl.innerHTML = "";
-          return;
+        // Render cards
+        function renderDrams(type = 'ongoing') {
+            const container = document.getElementById('container');
+            container.innerHTML = '';
+            
+            const filtered = dramas.filter(d => !type || d.type === type);
+            
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="loading">Drama tidak ditemukan</div>';
+                return;
+            }
+            
+            filtered.forEach(d => {
+                const card = document.createElement('a');
+                card.className = 'card';
+                card.href = `/detail.html?id=${d.title}`;
+                card.innerHTML = `
+                    <img src="${d.img}" alt="${d.title}" loading="lazy">
+                    <h3>${d.title}</h3>
+                `;
+                container.appendChild(card);
+            });
         }
 
-        suggestEl.innerHTML = list.slice(0, 5).map(s => {
-          const text = escapeHTML(s);
-          const onClickQ = s.replace(/'/g, "\\'");
-          return `<div onclick="doSearch('${onClickQ}')">${text}</div>`;
-        }).join("");
-      })
-      .catch(() => {
-        suggestEl.innerHTML = "";
-      });
-  }, 400);
-});
+        // Tab functionality
+        document.querySelectorAll('.tab').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelector('.tab.active').classList.remove('active');
+                btn.classList.add('active');
+                renderDrams(btn.dataset.tab);
+            };
+        });
 
-function doSearch(q) {
-  searchInput.value = q;
-  suggestEl.innerHTML = "";
-  listEl.innerHTML = "<div class='loading'>Mencari...</div>";
+        // Search functionality
+        const searchInput = document.getElementById('search');
+        const suggest = document.getElementById('suggest');
+        
+        searchInput.oninput = (e) => {
+            const query = e.target.value.toLowerCase();
+            suggest.innerHTML = '';
+            
+            if (query.length < 2) return;
+            
+            const matches = dramas.filter(d => 
+                d.title.toLowerCase().includes(query)
+            );
+            
+            if (matches.length > 0) {
+                matches.slice(0, 5).forEach(d => {
+                    const div = document.createElement('div');
+                    div.textContent = d.title;
+                    div.onclick = () => {
+                        searchInput.value = d.title;
+                        suggest.style.display = 'none';
+                        renderDrams();
+                    };
+                    suggest.appendChild(div);
+                });
+                suggest.style.display = 'block';
+            }
+        };
 
-  fetch(`https://restxdb.onrender.com/api/search/${encodeURIComponent(q)}/1?lang=in`)
-    .then(res => res.json())
-    .then(res => {
-      const list = res?.data?.list || [];
-      if (!Array.isArray(list) || list.length === 0) {
-        listEl.innerHTML = "<div class='loading'>Tidak ditemukan</div>";
-        return;
-      }
-      renderList(list);
-    })
-    .catch(() => {
-      listEl.innerHTML = "<div class='loading'>Gagal mencari</div>";
-    });
-}
-
-/* LOAD DEFAULT */
-loadTab("foryou", document.querySelector(".tabs button"));
-</script>
-
+        // Initial load
+        renderDrams();
+    </script>
 </body>
 </html>
