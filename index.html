@@ -22,10 +22,10 @@ fetch("https://restxdb.onrender.com/api/foryou/1?lang=in")
 
     res.data.list.forEach(d => {
       list.innerHTML += `
-        <a href="detail.html?id=${d.bookId}&title=${encodeURIComponent(d.title)}">
+        <a href="detail.html?id=${d.bookId}&title=${encodeURIComponent(d.bookName)}">
           <div class="card">
             <img src="${d.cover}" loading="lazy">
-            <h3>${d.title}</h3>
+            <h3>${d.bookName}</h3>
           </div>
         </a>
       `;
@@ -33,7 +33,7 @@ fetch("https://restxdb.onrender.com/api/foryou/1?lang=in")
   })
   .catch(() => {
     document.getElementById("list").innerHTML =
-      "<div class='Roring'>Gagal memuat data</div>";
+      "<div class='cardoring'>Gagal memuat data</div>";
   });
 </script>
 
