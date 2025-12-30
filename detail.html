@@ -12,15 +12,13 @@
       background-size: 200% 100%;
       animation: skeleton-loading 1.5s infinite;
       border-radius: 12px;
-      height: 72px;
-      margin: 6px;
     }
     @keyframes skeleton-loading {
       0% { background-position: 200% 0; }
       100% { background-position: -200% 0; }
     }
     
-    /* DETAIL PAGE STYLING */
+    /* DETAIL PAGE */
     body { background: linear-gradient(135deg, #0b1220 0%, #1e293b 100%); }
     
     #title {
@@ -35,10 +33,63 @@
       border-bottom: 1px solid rgba(56,189,248,.3);
     }
     
+    .hero-section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    .poster {
+      width: 180px;
+      height: 260px;
+      border-radius: 16px;
+      object-fit: cover;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+      transition: transform 0.3s;
+    }
+    
+    .poster:hover { transform: scale(1.02); }
+    
+    .hero-content h1 {
+      font-size: clamp(24px, 6vw, 32px);
+      font-weight: 700;
+      background: linear-gradient(135deg, #38bdf8, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
+    }
+    
+    .synopsis {
+      color: #cbd5e1;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      font-size: 15px;
+    }
+    
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    
+    .tag {
+      background: rgba(56,189,248,0.2);
+      color: #38bdf8;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      border: 1px solid rgba(56,189,248,0.3);
+    }
+    
     .stats {
       background: rgba(30,41,59,.8);
       padding: 15px 20px;
-      margin: 15px;
+      margin: 0 24px 24px;
       border-radius: 12px;
       border: 1px solid rgba(56,189,248,.2);
       text-align: center;
@@ -49,12 +100,12 @@
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
       gap: 12px;
-      padding: 20px;
+      padding: 0 24px 40px;
       max-width: 1200px;
       margin: 0 auto;
     }
     
-    .episode-item {
+    .episode-item, .episode-item a {
       aspect-ratio: 1;
       background: rgba(30,41,59,.8);
       border: 2px solid transparent;
@@ -71,32 +122,70 @@
       overflow: hidden;
     }
     
-    .episode-item:hover {
+    .episode-item:hover, .episode-item a:hover {
       background: rgba(56,189,248,.2);
       border-color: #38bdf8;
       transform: translateY(-2px);
       box-shadow: 0 8px 25px rgba(56,189,248,.3);
     }
     
-    .episode-item.free { border-color: #10b981; }
-    .episode-item.vip { border-color: #f59e0b; background: rgba(245,158,11,.1); }
+    .episode-item.free, .episode-item.free a { border-color: #10b981; }
+    .episode-item.vip, .episode-item.vip a { border-color: #f59e0b; background: rgba(245,158,11,.1); }
     
     .episode-num { font-size: 14px; margin-bottom: 4px; font-weight: 700; }
     .episode-badge { font-size: 9px; padding: 2px 6px; border-radius: 6px; background: rgba(0,0,0,.7); }
     .free-badge { background: rgba(16,185,129,.9); color: #fff; }
     .vip-badge { background: rgba(245,158,11,.9); color: #fff; }
     
+    .loading {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 80px 20px;
+      opacity: 0.6;
+      font-size: 16px;
+    }
+    
     @media (max-width: 768px) {
-      .episode-grid { grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 16px; }
+      .hero-section { grid-template-columns: 140px 1fr; gap: 16px; padding: 16px; }
+      .poster { width: 140px; height: 200px; }
+      .episode-grid { grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 0 16px 40px; }
     }
     @media (max-width: 480px) {
       .episode-grid { grid-template-columns: repeat(4, 1fr); }
+      .hero-section { grid-template-columns: 1fr; text-align: center; }
+      .poster { width: 100%; height: 200px; max-width: 280px; }
     }
   </style>
 </head>
 <body>
 
 <header id="title">Detail Drama</header>
+
+<!-- HERO SECTION (POSTER + INFO) -->
+<div class="hero-section">
+  <!-- POSTER SKELETON -->
+  <div class="skeleton" style="width:180px;height:260px;border-radius:16px;"></div>
+  
+  <div class="hero-content">
+    <h1 id="dramaTitle">Loading...</h1>
+    
+    <!-- SYNOPSIS SKELETON -->
+    <div id="synopsisSkeleton" style="margin-bottom:20px;">
+      <div class="skeleton" style="height:20px;width:80%;"></div>
+      <div class="skeleton" style="height:20px;width:60%;margin-top:8px;"></div>
+      <div class="skeleton" style="height:20px;width:90%;margin-top:8px;"></div>
+    </div>
+    
+    <div id="synopsis" class="synopsis" style="display:none;"></div>
+    
+    <!-- TAGS SKELETON -->
+    <div id="tagsSkeleton" class="tags" style="margin-top:16px;">
+      ${Array(4).fill(0).map(() => '<div class="skeleton" style="height:32px;width:60px;"></div>').join('')}
+    </div>
+    
+    <div id="tags" class="tags" style="display:none;"></div>
+  </div>
+</div>
 
 <div class="stats" id="totalEps">
   <div style="display:flex;align-items:center;justify-content:center;gap:12px;">
@@ -106,10 +195,7 @@
 </div>
 
 <div id="eps" class="episode-grid">
-  <!-- SKELETON GRID (15 items) -->
-  ${Array(15).fill(0).map((_, i) => `
-    <div class="skeleton" style="grid-column: span 1;"></div>
-  `).join('')}
+  ${Array(15).fill(0).map(() => '<div class="skeleton" style="grid-column:span 1;"></div>').join('')}
 </div>
 
 <script>
@@ -117,34 +203,64 @@ const q = new URLSearchParams(location.search);
 const bookId = q.get("id");
 const rawTitle = q.get("title");
 
-function escapeHTML(str = "") {
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
 const headerEl = document.getElementById("title");
+const dramaTitleEl = document.getElementById("dramaTitle");
+const synopsisEl = document.getElementById("synopsis");
+const tagsEl = document.getElementById("tags");
+const synopsisSkeletonEl = document.getElementById("synopsisSkeleton");
+const tagsSkeletonEl = document.getElementById("tagsSkeleton");
 const totalEl = document.getElementById("totalEps");
 const epsEl = document.getElementById("eps");
+const posterEl = document.querySelector('.hero-section .skeleton');
 
 if (!bookId) {
   headerEl.innerText = "Drama tidak ditemukan";
-  epsEl.innerHTML = "<div style='grid-column:1/-1;text-align:center;padding:60px;color:#94a3b8;'>ID drama tidak valid</div>";
+  epsEl.innerHTML = "<div class='loading'>ID drama tidak valid</div>";
 } else {
   const title = rawTitle ? decodeURIComponent(rawTitle) : "Daftar Episode";
   headerEl.innerText = title;
+  dramaTitleEl.textContent = title;
   
-  // Simulate loading time (realistic)
+  // 1. AMBIL POSTER + DETAIL DRAMA
+  setTimeout(() => {
+    fetch(`https://restxdb.onrender.com/api/foryou/1?lang=in`)
+      .then(r => r.json())
+      .then(r => {
+        const drama = r.data.list.find(d => d.bookId === bookId);
+        if (drama) {
+          // Hide skeleton, show real data
+          posterEl.style.display = 'none';
+          const img = document.createElement('img');
+          img.src = drama.cover;
+          img.className = 'poster';
+          img.alt = drama.bookName;
+          img.onerror = () => img.src = '/placeholder-poster.jpg'; // fallback
+          document.querySelector('.hero-section').children[0].appendChild(img);
+          
+          synopsisSkeletonEl.style.display = 'none';
+          synopsisEl.style.display = 'block';
+          synopsisEl.textContent = drama.introduction || 'Sinopsis tidak tersedia.';
+          
+          tagsSkeletonEl.style.display = 'none';
+          tagsEl.style.display = 'flex';
+          if (drama.tags && drama.tags.length) {
+            drama.tags.slice(0, 6).forEach(tag => {
+              const span = document.createElement('span');
+              span.className = 'tag';
+              span.textContent = tag;
+              tagsEl.appendChild(span);
+            });
+          }
+        }
+      });
+  }, 400);
+  
+  // 2. AMBIL EPISODE (sama seperti sebelumnya)
   setTimeout(() => {
     fetch(`https://restxdb.onrender.com/api/chapters/${encodeURIComponent(bookId)}?lang=in`)
       .then(res => res.json())
       .then(res => {
         const list = res?.data?.chapterList || [];
-        
-        // Hitung gratis vs VIP
         const freeCount = list.filter(c => !c.isCharge).length;
         const vipCount = list.length - freeCount;
         
@@ -155,15 +271,13 @@ if (!bookId) {
         `;
 
         if (!Array.isArray(list) || list.length === 0) {
-          epsEl.innerHTML = "<div style='grid-column:1/-1;text-align:center;padding:60px;color:#94a3b8;'>Episode tidak tersedia</div>";
+          epsEl.innerHTML = "<div class='loading'>Episode tidak tersedia</div>";
           return;
         }
 
-        // Replace skeleton dengan real data
         epsEl.innerHTML = list.map((chapter) => {
           const epNum = chapter.chapterIndex + 1;
           const isVip = chapter.isCharge;
-          
           return `
             <a href="watch.html?book=${encodeURIComponent(bookId)}&ep=${chapter.chapterIndex}&title=Episode ${epNum}" 
                class="episode-item ${isVip ? 'vip' : 'free'}">
@@ -177,9 +291,9 @@ if (!bookId) {
       })
       .catch(() => {
         totalEl.innerHTML = "⚠️ Error loading";
-        epsEl.innerHTML = "<div style='grid-column:1/-1;text-align:center;padding:60px;color:#f87171;'>Gagal memuat episode</div>";
+        epsEl.innerHTML = "<div class='loading'>Gagal memuat episode</div>";
       });
-  }, 800); // 800ms realistic loading
+  }, 1200); // Staggered loading
 }
 </script>
 
