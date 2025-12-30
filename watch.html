@@ -10,7 +10,7 @@
       background:#0b1220;
       color:#fff;
       font-family:system-ui;
-      overflow:hidden;
+      margin:0;
     }
     header {
       padding:14px;
@@ -22,51 +22,68 @@
       top:0;
       z-index:10;
     }
-    .player-container {
+    .player-wrap {
       width:100vw;
       height:calc(100vh - 60px);
-      position:relative;
-    }
-    .error {
       display:flex;
       align-items:center;
       justify-content:center;
-      height:calc(100vh - 60px);
+      padding:8px;
+    }
+    video {
+      width:100%;
+      height:100%;
+      max-width:1000px;
+      max-height:100%;
+      background:#000;
+      object-fit:contain;
+    }
+    .loading, .error {
       text-align:center;
       padding:20px;
+      color:#e5e7eb;
     }
-    .loading {
+    .error a {
+      color:#38bdf8;
+      text-decoration:none;
+    }
+    .quality-bar {
+      position:absolute;
+      bottom:10px;
+      right:10px;
+      background:rgba(15,23,42,.85);
+      border-radius:6px;
+      padding:4px 8px;
       display:flex;
-      align-items:center;
-      justify-content:center;
-      height:calc(100vh - 60px);
+      gap:4px;
+      font-size:12px;
     }
-    .spinner {
-      width:30px;
-      height:30px;
-      border:3px solid #374151;
-      border-top:3px solid #38bdf8;
-      border-radius:50%;
-      animation:spin 1s linear infinite;
+    .quality-btn {
+      border:none;
+      background:transparent;
+      color:#9ca3af;
+      cursor:pointer;
+      padding:2px 6px;
+      border-radius:4px;
     }
-    @keyframes spin { 0% { transform:rotate(0deg); } 100% { transform:rotate(360deg); } }
+    .quality-btn.active {
+      background:#38bdf8;
+      color:#0f172a;
+    }
   </style>
 </head>
 <body>
 
 <header id="title">Nonton Episode</header>
 
-<div id="content" class="player-container">
-  <div class="loading">
-    <div class="spinner"></div>
-    <span style="margin-left:15px;">Memuat video...</span>
-  </div>
+<div id="playerBox" class="player-wrap">
+  <div class="loading">Memuat video...</div>
 </div>
 
 <script>
-const params = new URLSearchParams(location.search);
-const bookId = params.get("book");
-const epIndex = params.get("ep");
+const params   = new URLSearchParams(location.search);
+const bookId   = params.get("book");
+const epIndex  = params.get("ep");
 const rawTitle = params.get("title");
 
 function escapeHTML(str = "") {
@@ -78,103 +95,99 @@ function escapeHTML(str = "") {
     .replace(/'/g, "&#039;");
 }
 
-const titleEl = document.getElementById("title");
-const contentEl = document.getElementById("content");
+const titleEl  = document.getElementById("title");
+const boxEl    = document.getElementById("playerBox");
 
 if (!bookId || epIndex === null) {
   titleEl.innerText = "Error";
-  contentEl.innerHTML = `
+  boxEl.innerHTML = `
     <div class="error">
-      <div>Parameter episode tidak valid.<br>
-      <small>Gunakan dari halaman detail</small>
-      </div>
+      Parameter episode tidak valid.<br><br>
+      <a href="javascript:history.back()">← Kembali</a>
     </div>
   `;
 } else {
-  const showTitle = rawTitle ? decodeURIComponent(rawTitle) : `Episode ${Number(epIndex) + 1}`;
+  const showTitle = rawTitle ? decodeURIComponent(rawTitle) : `Episode ${Number(epIndex)+1}`;
   titleEl.innerText = showTitle;
-  
-  // Gunakan endpoint WATCH sesuai dokumentasi
-  const watchUrl = `https://restxdb.onrender.com/api/watch/${encodeURIComponent(bookId)}/${encodeURIComponent(epIndex)}?lang=in&source=search_result`;
-  
-  fetch(watchUrl)
-    .then(res => res.json())
-    .then(res => {
-      const data = res?.data;
-      if (!data) {
-        throw new Error("Data tidak ditemukan");
-      }
-      
-      // Coba berbagai kemungkinan field URL video
-      const videoUrl = data.playUrl || data.url || data.hls || data.m3u8 || data.embed || "";
-      
-      if (!videoUrl) {
-        throw new Error("Link video tidak ditemukan");
-      }
-      
-      // Cek apakah HLS (.m3u8) atau MP4 biasa
-      if (videoUrl.includes('.m3u8')) {
-        // HLS player sederhana dengan hls.js
-        loadHLSPlayer(videoUrl);
-      } else {
-        // Video HTML5 biasa
-        contentEl.innerHTML = `
-          <video controls autoplay playsinline style="width:100%; height:100%; object-fit:contain;">
-            <source src="${escapeHTML(videoUrl)}" type="video/mp4">
-            Browser tidak mendukung video.
-          </video>
-        `;
-      }
+
+  const url = `https://restxdb.onrender.com/api/watch/${encodeURIComponent(bookId)}/${encodeURIComponent(epIndex)}?lang=in&source=search_result`;
+
+  fetch(url)
+    .then(r => r.json())
+    .then(r => {
+      const data = r?.data;
+      if (!data) throw new Error("Data kosong");
+
+      const qualities = Array.isArray(data.qualities) ? data.qualities : [];
+      let defaultQuality = qualities.find(q => q.isDefault === 1);
+      if (!defaultQuality && qualities.length) defaultQuality = qualities[0];
+
+      const mainUrl = defaultQuality?.videoPath || data.videoUrl;
+      if (!mainUrl) throw new Error("URL video tidak ditemukan");
+
+      renderPlayer(mainUrl, qualities, showTitle);
     })
     .catch(err => {
-      console.error(err);
-      contentEl.innerHTML = `
+      boxEl.innerHTML = `
         <div class="error">
-          <div>
-            <strong>Gagal memuat video</strong><br><br>
-            <small>${escapeHTML(err.message)}</small><br><br>
-            <a href="javascript:history.back()" style="color:#38bdf8;">← Kembali</a>
-          </div>
+          <strong>Gagal memuat video</strong><br><br>
+          <small>${escapeHTML(err.message)}</small><br><br>
+          <a href="javascript:history.back()">← Kembali</a>
         </div>
       `;
     });
 }
 
-// HLS Player (untuk .m3u8)
-function loadHLSPlayer(hlsUrl) {
-  const script = document.createElement('script');
-  script.src = 'https://cdn.jsdelivr.net/npm/hls.js@latest';
-  script.onload = () => {
-    if (Hls.isSupported()) {
-      const video = document.createElement('video');
-      video.controls = true;
-      video.autoplay = true;
-      video.playsInline = true;
-      video.muted = true; // iOS autoplay fix
-      video.style.width = '100%';
-      video.style.height = '100%';
-      video.style.objectFit = 'contain';
-      
-      contentEl.innerHTML = '';
-      contentEl.appendChild(video);
-      
-      const hls = new Hls();
-      hls.loadSource(hlsUrl);
-      hls.attachMedia(video);
-      
-      video.addEventListener('loadedmetadata', () => {
-        video.muted = false;
+function renderPlayer(src, qualities, title) {
+  boxEl.innerHTML = "";
+
+  const container = document.createElement("div");
+  container.style.position = "relative";
+  container.style.width = "100%";
+  container.style.height = "100%";
+  container.style.display = "flex";
+  container.style.justifyContent = "center";
+  container.style.alignItems = "center";
+
+  const video = document.createElement("video");
+  video.controls = true;
+  video.autoplay = true;
+  video.playsInline = true;
+  video.src = src;
+  video.title = title;
+
+  container.appendChild(video);
+
+  // Tombol kualitas
+  if (qualities.length) {
+    const bar = document.createElement("div");
+    bar.className = "quality-bar";
+
+    let currentQuality = src;
+
+    qualities
+      .slice() // copy
+      .sort((a,b) => b.quality - a.quality)
+      .forEach(q => {
+        const btn = document.createElement("button");
+        btn.className = "quality-btn" + (q.videoPath === currentQuality ? " active" : "");
+        btn.textContent = q.quality + "p";
+
+        btn.onclick = () => {
+          currentQuality = q.videoPath;
+          video.src = q.videoPath;
+          video.play();
+          document.querySelectorAll(".quality-btn").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+        };
+
+        bar.appendChild(btn);
       });
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      // Native HLS support (iOS Safari)
-      contentEl.innerHTML = `
-        <video controls autoplay playsinline style="width:100%; height:100%; object-fit:contain;">
-          <source src="${escapeHTML(hlsUrl)}" type="application/vnd.apple.mpegurl">
-        </video>
-      `;
-    }
-  };
-  document.head.appendChild(script);
+
+    container.appendChild(bar);
+  }
+
+  boxEl.appendChild(container);
 }
 </script>
 
